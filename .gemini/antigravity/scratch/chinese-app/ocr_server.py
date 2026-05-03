@@ -12,7 +12,18 @@ from fastapi import FastAPI, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
-from rapidocr_onnxruntime import RapidOCR
+# RapidOCR is lazy-loaded to avoid OOM on startup (Railway free tier has 512MB RAM)
+_ocr_engine = None
+
+def get_ocr_engine():
+    """Lazy-load OCR engine to avoid OOM crash on startup."""
+    global _ocr_engine
+    if _ocr_engine is None:
+        from rapidocr_onnxruntime import RapidOCR
+        print("Initializing RapidOCR engine...")
+        _ocr_engine = RapidOCR()
+        print("RapidOCR engine ready.")
+    return _ocr_engine
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -134,16 +145,17 @@ app.mount("/static", StaticFiles(directory=APP_DIR), name="static")
 async def root():
     return FileResponse(os.path.join(APP_DIR, "index.html"))
 
-print("Initializing PaddleOCR (RapidOCR ONNX)...")
-engine = RapidOCR()
 print("=" * 50)
-print("Backend Server Ready!")
-print(">> Mo ung dung tai: http://127.0.0.1:8000")
-print(">> (Dung file:// se bi loi nhu video YouTube)")
+print("Backend Server Ready! (OCR engine loads on first use)")
+print("> Mo ung dung tai: http://127.0.0.1:8000")
 print("=" * 50)
 
 @app.post("/ocr")
 async def process_ocr(file: UploadFile = File(...)):
+    try:
+        engine = get_ocr_engine()
+    except Exception as e:
+        return {"status": "error", "text": "", "message": f"OCR engine unavailable: {str(e)}"}
     contents = await file.read()
     result, elapse = engine(contents)
     if not result: return {"text": ""}
@@ -281,6 +293,10 @@ async def extract_from_cached_pdf(data: dict = Body(...)):
     with open(file_path, 'rb') as f:
         contents = f.read()
     
+    try:
+        engine = get_ocr_engine()
+    except Exception as e:
+        return {"status": "error", "message": f"OCR engine unavailable: {str(e)}"}
     result, elapse = engine(contents)
     if not result: 
         return {"text": "", "status": "no_text"}
