@@ -1162,18 +1162,36 @@ Bài 15: Trang 36-37..."
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       
+      console.log('Signup attempt:', { name, email, password: '***' });
+      
       if (!email || !password) {
         toast('⚠️ Vui lòng nhập đầy đủ thông tin', 'error');
         return;
       }
       
-      const { error } = await Auth.signupWithEmail(email, password, name);
-      if (!error) {
+      if (password.length < 6) {
+        toast('⚠️ Mật khẩu phải có ít nhất 6 ký tự', 'error');
+        return;
+      }
+      
+      try {
+        const { data, error } = await Auth.signupWithEmail(email, password, name);
+        
+        if (error) {
+          console.error('Signup error:', error);
+          toast(`❌ Lỗi đăng ký: ${error.message}`, 'error');
+          return;
+        }
+        
+        console.log('Signup success:', data);
         closeModal('modal-login');
         document.getElementById('signup-name').value = '';
         document.getElementById('signup-email').value = '';
         document.getElementById('signup-password').value = '';
         showLoginForm();
+      } catch (err) {
+        console.error('Signup exception:', err);
+        toast(`❌ Lỗi: ${err.message}`, 'error');
       }
     }
     

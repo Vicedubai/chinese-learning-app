@@ -135,11 +135,14 @@ const Auth = {
   async signupWithEmail(email, password, name) {
     const client = SupabaseClient.getClient();
     if (!client) {
+      console.error('Supabase client not available');
       if (typeof toast === 'function') {
         toast('❌ Supabase chưa được cấu hình', 'error');
       }
       return { error: 'Supabase not configured' };
     }
+
+    console.log('Attempting signup with:', { email, name });
 
     try {
       const { data, error } = await client.auth.signUp({
@@ -148,19 +151,29 @@ const Auth = {
         options: {
           data: {
             name: name || email.split('@')[0]
-          }
+          },
+          emailRedirectTo: window.location.origin
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Signup error from Supabase:', error);
+        throw error;
+      }
+      
+      console.log('Signup response:', data);
       
       if (typeof toast === 'function') {
-        toast('✅ Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.', 'success');
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          toast('⚠️ Email này đã được đăng ký. Vui lòng đăng nhập.', 'error');
+        } else {
+          toast('✅ Đăng ký thành công! Bạn có thể đăng nhập ngay.', 'success');
+        }
       }
       
       return { data };
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Signup exception:', error);
       if (typeof toast === 'function') {
         toast(`❌ Lỗi đăng ký: ${error.message}`, 'error');
       }
