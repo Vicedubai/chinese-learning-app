@@ -37,7 +37,8 @@ const Settings = {
         // Apply settings
         if (data.theme) this.applyTheme(data.theme);
         if (data.gemini_api_key) {
-          localStorage.setItem('gemini_api_key', data.gemini_api_key);
+          // Dùng 'gemini-api-key' (hyphen) để khớp với tất cả JS files
+          localStorage.setItem('gemini-api-key', data.gemini_api_key);
         }
         if (data.settings) {
           // Apply other settings

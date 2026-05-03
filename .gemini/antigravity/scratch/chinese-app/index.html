@@ -1244,7 +1244,7 @@ Bài 15: Trang 36-37..."
     // ===== AI SETTINGS FUNCTIONS =====
     function openAISettings() {
       // Load current API key
-      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const apiKey = localStorage.getItem('gemini-api-key') || '';
       const apiKeyInput = document.getElementById('gemini-api-key');
       if (apiKeyInput) {
         apiKeyInput.value = apiKey;
@@ -1262,8 +1262,8 @@ Bài 15: Trang 36-37..."
         return;
       }
       
-      // Save to localStorage
-      localStorage.setItem('gemini_api_key', apiKey);
+      // Save to localStorage - dùng cùng key với tất cả JS files
+      localStorage.setItem('gemini-api-key', apiKey);
       
       // Save to Supabase if logged in
       if (Auth && Auth.currentUser) {
@@ -1293,11 +1293,16 @@ Bài 15: Trang 36-37..."
       `;
       
       try {
-        // Get API key from localStorage (user can set it in settings)
+        // Get API key from localStorage or use default
         let apiKey = localStorage.getItem('youtube-api-key');
         
-        // If no API key, show setup instructions
+        // Use default API key if user hasn't set their own
         if (!apiKey) {
+          apiKey = 'AIzaSyAcr5xrIzl02jskeIeYI8Yn3vGysygbQsE'; // Default API key for all users
+        }
+        
+        // If still no API key (shouldn't happen), show setup instructions
+        if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
           resultsContainer.innerHTML = `
             <div style="padding:24px;text-align:center">
               <div style="font-size:48px;margin-bottom:16px">🔑</div>
@@ -1448,13 +1453,25 @@ Bài 15: Trang 36-37..."
         html += `
           <div style="text-align:center;margin-top:16px;padding:16px;border:1px dashed var(--border);border-radius:8px">
             <div class="text-sm text-muted mb-12">Tìm thấy ${data.items.length} video</div>
-            <button 
-              class="btn btn-secondary btn-sm" 
-              onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}', '_blank')"
-              style="font-size:12px"
-            >
-              🔍 Xem thêm trên YouTube
-            </button>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button 
+                class="btn btn-secondary btn-sm" 
+                onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}', '_blank')"
+                style="font-size:12px"
+              >
+                🔍 Xem thêm trên YouTube
+              </button>
+              ${localStorage.getItem('youtube-api-key') ? '' : `
+                <button 
+                  class="btn btn-ghost btn-sm" 
+                  onclick="showAPIKeyInfo()"
+                  style="font-size:12px"
+                  title="Bạn đang dùng API Key mặc định"
+                >
+                  🔑 API Key
+                </button>
+              `}
+            </div>
           </div>
         `;
         
@@ -1488,6 +1505,92 @@ Bài 15: Trang 36-37..."
       
       localStorage.setItem('youtube-api-key', apiKey);
       toast('✅ Đã lưu API Key', 'success');
+      
+      // Re-run search
+      searchYouTubeVideos();
+    }
+    
+    // Show API Key info
+    function showAPIKeyInfo() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:500px">
+          <div class="modal-header">
+            <span class="modal-title">🔑 Thông tin API Key</span>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+          </div>
+          <div style="padding:20px">
+            <div style="background:var(--bg-3);padding:16px;border-radius:8px;margin-bottom:16px">
+              <div style="font-size:13px;line-height:1.8;color:var(--text-2)">
+                <p style="margin-bottom:12px">
+                  ✅ Bạn đang dùng <strong>API Key mặc định</strong> của app.
+                </p>
+                <p style="margin-bottom:12px">
+                  📊 Giới hạn: <strong>100 lần tìm kiếm/ngày</strong> (chia sẻ cho tất cả users)
+                </p>
+                <p>
+                  💡 Nếu muốn không giới hạn, bạn có thể dùng API Key riêng của mình.
+                </p>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:16px">
+              <label style="display:block;margin-bottom:8px;font-weight:600;font-size:13px">
+                Dùng API Key riêng (Tùy chọn):
+              </label>
+              <input 
+                type="text" 
+                id="custom-api-key-input" 
+                class="input" 
+                placeholder="Paste API Key của bạn vào đây..."
+                style="width:100%;font-size:13px"
+              >
+            </div>
+            
+            <div style="display:flex;gap:8px">
+              <button 
+                class="btn btn-primary btn-sm" 
+                onclick="saveCustomAPIKey()"
+                style="flex:1"
+              >
+                💾 Lưu API Key riêng
+              </button>
+              <button 
+                class="btn btn-ghost btn-sm" 
+                onclick="this.closest('.modal-overlay').remove()"
+              >
+                Đóng
+              </button>
+            </div>
+            
+            <div style="margin-top:16px;padding:12px;background:rgba(52,152,219,0.1);border-radius:6px;border-left:3px solid var(--blue)">
+              <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+                <strong>📚 Hướng dẫn lấy API Key:</strong><br>
+                Xem file <code>YOUTUBE_API_SETUP_NHANH.md</code> để biết cách lấy API Key miễn phí (5 phút).
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+    
+    // Save custom API Key
+    function saveCustomAPIKey() {
+      const apiKey = document.getElementById('custom-api-key-input').value.trim();
+      if (!apiKey) {
+        toast('⚠️ Vui lòng nhập API Key', 'error');
+        return;
+      }
+      
+      localStorage.setItem('youtube-api-key', apiKey);
+      toast('✅ Đã lưu API Key riêng của bạn', 'success');
+      
+      // Close modal
+      document.querySelector('.modal-overlay').remove();
       
       // Re-run search
       searchYouTubeVideos();
