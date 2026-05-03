@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Railway API</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #27ae60; }
+        .error { background: #c0392b; }
+        .loading { background: #f39c12; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #2c2c2c; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Railway Backend API</h1>
+    
+    <div>
+        <button onclick="testConnection()">1. Test Connection</button>
+        <button onclick="testSync()">2. Test Sync</button>
+        <button onclick="testLoad()">3. Test Load</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        const API_URL = 'https://chinese-learning-app-production.up.railway.app';
+        
+        function showResult(message, type = 'loading') {
+            document.getElementById('result').innerHTML = 
+                `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function testConnection() {
+            showResult('🔄 Đang kiểm tra kết nối...', 'loading');
+            try {
+                const response = await fetch(API_URL + '/');
+                if (response.ok) {
+                    showResult('✅ Kết nối thành công! Backend đang chạy.', 'success');
+                } else {
+                    showResult(`❌ Lỗi: HTTP ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Không thể kết nối: ${error.message}<br><br>
+                    <strong>Nguyên nhân có thể:</strong><br>
+                    1. Railway backend chưa deploy<br>
+                    2. URL không đúng<br>
+                    3. Backend đang sleep (Railway free tier)<br>
+                    4. Lỗi mạng`, 'error');
+            }
+        }
+        
+        async function testSync() {
+            showResult('🔄 Đang test API /sync...', 'loading');
+            try {
+                const testData = {
+                    chapters: [{ id: 'test-1', name: 'Test Chapter' }],
+                    cards: [{ id: 'card-1', chinese: '你好' }],
+                    progress: { xp: 100 }
+                };
+                
+                const response = await fetch(API_URL + '/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ Sync thành công!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                } else {
+                    showResult(`❌ Lỗi sync: HTTP ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Lỗi: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLoad() {
+            showResult('🔄 Đang test API /load...', 'loading');
+            try {
+                const response = await fetch(API_URL + '/load');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ Load thành công!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                } else {
+                    showResult(`❌ Lỗi load: HTTP ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Lỗi: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto test on load
+        window.onload = () => testConnection();
+    </script>
+</body>
+</html>

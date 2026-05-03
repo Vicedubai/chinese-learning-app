@@ -64,23 +64,38 @@ const AutoSync = {
         timestamp: Date.now()
       };
 
-      const response = await fetch(`${window.API_BASE_URL}/sync`, {
+      const url = `${window.API_BASE_URL}/sync`;
+      console.log('🔄 Syncing to:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
         keepalive: isSync // Cho phép request hoàn thành khi đóng tab
       });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Sync result:', result);
 
       this.hasChanges = false;
       this.lastSyncTime = Date.now();
       this.updateSyncStatus('synced');
       
-      console.log('✅ Synced to server');
+      if (typeof toast === 'function') {
+        toast('✅ Đã đồng bộ lên server', 'success');
+      }
     } catch (error) {
       console.error('❌ Sync failed:', error);
       this.updateSyncStatus('error');
+      
+      if (typeof toast === 'function') {
+        toast(`❌ Lỗi đồng bộ: ${error.message}`, 'error');
+      }
     } finally {
       this.isSyncing = false;
     }
@@ -205,10 +220,39 @@ const AutoSync = {
     if (this.enabled) {
       this.stop();
       this.updateSyncStatus('disabled');
-      toast('⏸️ Đã tắt tự động đồng bộ', 'info');
+      if (typeof toast === 'function') {
+        toast('⏸️ Đã tắt tự động đồng bộ', 'info');
+      }
     } else {
       this.start();
-      toast('▶️ Đã bật tự động đồng bộ', 'success');
+      if (typeof toast === 'function') {
+        toast('▶️ Đã bật tự động đồng bộ', 'success');
+      }
+    }
+  },
+
+  // Debug: Kiểm tra kết nối
+  async testConnection() {
+    try {
+      const url = `${window.API_BASE_URL}/`;
+      console.log('🧪 Testing connection to:', url);
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        if (typeof toast === 'function') {
+          toast('✅ Kết nối backend thành công!', 'success');
+        }
+        console.log('✅ Backend is online');
+        return true;
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Connection test failed:', error);
+      if (typeof toast === 'function') {
+        toast(`❌ Không thể kết nối backend: ${error.message}`, 'error');
+      }
+      return false;
     }
   }
 };
