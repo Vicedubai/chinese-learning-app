@@ -290,7 +290,7 @@ const Admin = {
       // 1. Lưu các chapters bình thường
       const normalChapters = State.chapters.map(ch => ({
         id: ch.id,
-        name: ch.name,
+        name: ch.name || 'Untitled Chapter',
         book_name: ch.bookName || '',
         page_range: ch.pageRange || '',
         vocab: ch.vocab || [],
