@@ -583,10 +583,10 @@ Bài 15: Trang 36-37..." style="width:100%;height:180px;padding:8px;font-size:13
     <p>Nhập link YouTube, dán transcript và luyện nghe từng câu một như một app chuyên dụng</p>
   </div>
 
-  <div style="display:grid;grid-template-columns: 300px 1fr 350px;gap:24px;align-items:start">
+  <div class="dictation-layout">
     <!-- LEFT COLUMN: Mini Flashcard -->
-    <div>
-      <div class="card" style="position:sticky;top:20px;height:calc(100vh - 120px);display:flex;flex-direction:column;padding:16px">
+    <div class="dictation-col-left">
+      <div class="card dict-sticky-card">
         <div class="flex justify-between items-center mb-12">
           <label class="label mb-0 flex items-center gap-8">
             <span>🃏 Ôn tập nhanh</span>
@@ -594,11 +594,11 @@ Bài 15: Trang 36-37..." style="width:100%;height:180px;padding:8px;font-size:13
         </div>
         <p class="text-xs text-muted mb-16" style="line-height:1.5">Ôn qua từ vựng trong khi chờ tải video hoặc luyện nghe.</p>
         
-        <div id="dict-mini-fc" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-1);border-radius:12px;border:1px solid var(--border);padding:16px;text-align:center;cursor:pointer;position:relative" onclick="flipMiniFlashcard()">
+        <div id="dict-mini-fc" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-1);border-radius:12px;border:1px solid var(--border);padding:16px;text-align:center;cursor:pointer;position:relative;min-height:150px;" onclick="flipMiniFlashcard()">
           <div class="text-muted text-sm" id="dict-mini-fc-content">Tải thẻ...</div>
         </div>
         
-        <div class="flex justify-between mt-16">
+        <div class="flex justify-between mt-16 dict-mini-fc-nav">
           <button class="btn btn-ghost btn-sm" onclick="navMiniFlashcard(-1)">← Lùi</button>
           <span class="text-xs text-muted font-medium" id="dict-mini-fc-count" style="line-height: 32px;">0 / 0</span>
           <button class="btn btn-ghost btn-sm" onclick="navMiniFlashcard(1)">Tiếp →</button>
@@ -607,7 +607,7 @@ Bài 15: Trang 36-37..." style="width:100%;height:180px;padding:8px;font-size:13
     </div>
 
     <!-- MAIN COLUMN -->
-    <div>
+    <div class="dictation-col-main">
       <div class="flex justify-between items-center mb-8" id="dict-reopen-setup" style="display:none">
         <span class="text-sm text-muted">Đang ẩn khung cài đặt video</span>
         <button class="btn btn-ghost btn-sm" onclick="toggleDictSetup()">⚙️ Thiết lập lại</button>
@@ -662,9 +662,9 @@ Bài 15: Trang 36-37..." style="width:100%;height:180px;padding:8px;font-size:13
       </div>
     </div>
 
-    <!-- SIDEBAR: Playlist -->
-    <div>
-      <div id="dictation-playlist-container" class="card" style="position:sticky;top:20px;height:calc(100vh - 120px);display:flex;flex-direction:column;padding:16px">
+    <!-- RIGHT COLUMN: Playlist -->
+    <div class="dictation-col-right">
+      <div id="dictation-playlist-container" class="card dict-sticky-card">
         <div class="flex justify-between items-center mb-16">
           <label class="label mb-0 flex items-center gap-8">
             <span>📚 Bài luyện (Playlist)</span>
@@ -678,6 +678,7 @@ Bài 15: Trang 36-37..." style="width:100%;height:180px;padding:8px;font-size:13
         <div id="dictation-playlist-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px">
           <div class="text-sm text-muted text-center mt-24">Chưa có bài luyện nào.</div>
         </div>
+
       </div>
     </div>
   </div>

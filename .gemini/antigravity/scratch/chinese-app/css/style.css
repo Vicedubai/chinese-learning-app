@@ -411,6 +411,25 @@ body {
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
 .label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
 
+/* ===== DICTATION LAYOUT BASE (Desktop) ===== */
+.dictation-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr 350px;
+  gap: 24px;
+  align-items: start;
+}
+.dictation-col-left { display: block; }
+.dictation-col-right { display: block; }
+.dict-sticky-card {
+  position: sticky;
+  top: 20px;
+  height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+.dict-mini-fc-nav { display: flex; justify-content: space-between; margin-top: 16px; }
+
 /* ===== RESPONSIVE ===== */
 
 /* Tablet & Small Desktop */
@@ -440,6 +459,12 @@ body {
   #sidebar.mobile-open {
     transform: translateX(0);
   }
+  
+  /* OVERRIDE tablet rules to show text again on mobile sidebar */
+  .sidebar-logo h1, .sidebar-logo span, .nav-item span, .nav-section-label, .sidebar-footer .flex { display: block; }
+  .sidebar-logo h1 { font-size: 15px; }
+  .nav-item { justify-content: flex-start; }
+  .nav-item .nav-badge { display: inline-block; }
   
   /* Main content - Full width on mobile */
   #main {
@@ -601,22 +626,19 @@ body {
   }
   
   /* Dictation */
+  .dictation-layout { 
+    display: grid; 
+    grid-template-columns: 1fr; /* Stacked layout on mobile */
+    gap: 20px; 
+  }
+  .dictation-col-left { display: none; } /* Hide mini flashcard on mobile completely as requested */
+  .dictation-col-right { order: -1; } /* Show playlist at the top on mobile */
+  .dict-sticky-card { position: static; height: auto; padding: 16px; min-height: 250px; }
+  
   .transcript-input { 
     min-height: 100px; 
     font-size: 14px;
   }
-  
-  /* Tabs */
-  .tabs { 
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .tab-btn { 
-    padding: 8px 12px; 
-    font-size: 12px;
-    min-width: calc(50% - 3px); /* 2 columns */
-  }
-}
 
 /* Extra small phones */
 @media (max-width: 380px) {
