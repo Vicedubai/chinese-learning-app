@@ -287,14 +287,13 @@ const Admin = {
     }
 
     try {
-      // 1. Lưu các chapters bình thường
+      // 1. Lưu các chapters bình thường (bỏ created_by để tránh FK constraint)
       const normalChapters = State.chapters.map(ch => ({
         id: ch.id,
         name: ch.name || 'Untitled Chapter',
         book_name: ch.bookName || '',
         page_range: ch.pageRange || '',
-        vocab: ch.vocab || [],
-        created_by: Auth.currentUser?.id
+        vocab: ch.vocab || []
       }));
 
       if (normalChapters.length > 0) {
@@ -309,6 +308,7 @@ const Admin = {
         writingTopics: State.writingTopics || []
       };
 
+      // 2. Lưu Global Data (bỏ created_by để tránh FK constraint)
       const { error } = await client
         .from('chapters')
         .upsert({ 
@@ -316,8 +316,7 @@ const Admin = {
           name: 'Dữ liệu dùng chung',
           book_name: 'System',
           page_range: '0',
-          vocab: globalData,
-          created_by: Auth.currentUser.id
+          vocab: globalData
         });
 
       if (error) throw error;
