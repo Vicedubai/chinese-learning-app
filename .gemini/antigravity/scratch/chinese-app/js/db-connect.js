@@ -5,11 +5,11 @@ const SUPABASE_URL = 'https://kangjlimeanujfpjissp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthbmdqbGltZWFudWpmcGppc3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MjA5NTQsImV4cCI6MjA5MzM5Njk1NH0.B1H8hrN3HklEovKvm0p8zWWcQmmcuBrVtgl2osXAC7Q';
 
 // Khởi tạo Supabase client
-let supabase = null;
+let supabaseInstance = null;
 
 function initSupabase() {
-  if (typeof supabase !== 'undefined' && supabase !== null) {
-    return supabase;
+  if (typeof supabaseInstance !== 'undefined' && supabaseInstance !== null) {
+    return supabaseInstance;
   }
   
   // Kiểm tra xem đã cấu hình chưa
@@ -19,9 +19,9 @@ function initSupabase() {
   }
   
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('✅ Supabase client initialized');
-    return supabase;
+    return supabaseInstance;
   } catch (error) {
     console.error('❌ Lỗi khởi tạo Supabase:', error);
     return null;
@@ -29,13 +29,13 @@ function initSupabase() {
 }
 
 // Helper functions
-const SupabaseClient = {
+const DBClient = {
   // Lấy client
   getClient() {
-    if (!supabase) {
-      supabase = initSupabase();
+    if (!supabaseInstance) {
+      supabaseInstance = initSupabase();
     }
-    return supabase;
+    return supabaseInstance;
   },
   
   // Kiểm tra đã cấu hình chưa
@@ -82,4 +82,4 @@ const SupabaseClient = {
 };
 
 // Export
-window.SupabaseClient = SupabaseClient;
+window.DBClient = DBClient;

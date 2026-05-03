@@ -18,7 +18,7 @@ const Admin = {
 
   // Load thống kê
   async loadStats() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -57,7 +57,7 @@ const Admin = {
 
   // Load danh sách users
   async loadUsers() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -148,7 +148,7 @@ const Admin = {
     const logEl = document.getElementById('admin-activity-log');
     if (!logEl) return;
 
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -200,7 +200,7 @@ const Admin = {
 
   // Xem tiến độ user
   async viewUserProgress(userId) {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -248,7 +248,7 @@ const Admin = {
       return;
     }
 
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -276,7 +276,7 @@ const Admin = {
 
   // Sync chapters to Supabase
   async syncChaptersToSupabase() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {

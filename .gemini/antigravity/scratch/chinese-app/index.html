@@ -1088,38 +1088,16 @@ Bài 15: Trang 36-37..."
     </div>
   </div>
 
-  <div class="modal-overlay" id="auth-modal">
-    <div class="modal" style="max-width:400px; text-align:center">
-      <div class="modal-header">
-        <span class="modal-title" id="auth-title">Đăng nhập tài khoản</span>
-        <button class="modal-close" onclick="closeAuthModal()">✕</button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        <div>
-          <label class="label" style="text-align:left">Email</label>
-          <input type="email" id="auth-email" class="input" placeholder="you@example.com">
-        </div>
-        <div>
-          <label class="label" style="text-align:left">Mật khẩu</label>
-          <input type="password" id="auth-password" class="input" placeholder="••••••••">
-        </div>
-        <button class="btn btn-primary btn-lg mt-8" onclick="handleAuthSubmit()">Đăng nhập</button>
-        <p class="text-sm text-muted mt-8">
-          Chưa có tài khoản? <a href="#" onclick="toggleAuthMode()" style="color:var(--red-light);text-decoration:none">Đăng ký ngay</a>
-        </p>
-      </div>
-    </div>
-  </div>
 
   <div id="toast-container"></div>
 
   <!-- MODALS MOVED OR DELETED -->
 
   <!-- Load Supabase client FIRST -->
-  <script src="js/supabase-client.js?v=2"></script>
+  <script src="js/db-connect.js?v=3"></script>
   
   <!-- Then load other files -->
-  <script src="js/core.js?v=3"></script>
+  <script src="js/core.js?v=4"></script>
   <script src="js/auth.js?v=2"></script>
   <script src="js/settings.js?v=1"></script>
   <script src="js/admin.js?v=1"></script>

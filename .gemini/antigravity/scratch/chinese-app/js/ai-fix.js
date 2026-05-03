@@ -1,39 +1,39 @@
-﻿// ===== AI FIX MODULE - Manual Input + Excel/CSV Import =====
-// Nhập thủ công hoặc import từ Excel/CSV
-// Không quét PDF (đã lưu tự động)
+// ===== AI FIX MODULE - Manual Input + Excel/CSV Import =====
+// Nh?p th? c�ng ho?c import t? Excel/CSV
+// Kh�ng qu�t PDF (d� luu t? d?ng)
 
-// ── Sửa 1 chương bằng nhập thủ công ──
+// -- S?a 1 chuong b?ng nh?p th? c�ng --
 function aiFixChapter(chapterId) {
   const ch = State.chapters.find(c => c.id === chapterId);
   if (!ch) {
-    toast('Không tìm thấy chương', 'error');
+    toast('Kh�ng t�m th?y chuong', 'error');
     return;
   }
 
-  // Cập nhật tiêu đề modal
+  // C?p nh?t ti�u d? modal
   const titleEl = document.getElementById('modal-ch-title');
-  if (titleEl) titleEl.textContent = `Nhập từ vựng - ${ch.title}`;
+  if (titleEl) titleEl.textContent = `Nh?p t? v?ng - ${ch.title}`;
 
   const bodyEl = document.getElementById('modal-ch-body');
   bodyEl.innerHTML = `
     <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:10px;padding:20px">
       <div class="flex items-center gap-12 mb-16">
-        <span style="font-size:24px">✏️</span>
+        <span style="font-size:24px">??</span>
         <div>
-          <h3 style="margin:0;font-weight:600">Nhập từ vựng cho ${ch.title}</h3>
-          <p style="margin:4px 0 0 0;font-size:12px;color:var(--text-2)">Chọn cách nhập: Thủ công hoặc Import Excel/CSV</p>
+          <h3 style="margin:0;font-weight:600">Nh?p t? v?ng cho ${ch.title}</h3>
+          <p style="margin:4px 0 0 0;font-size:12px;color:var(--text-2)">Ch?n c�ch nh?p: Th? c�ng ho?c Import Excel/CSV</p>
         </div>
       </div>
 
       <div class="flex gap-12 mb-16">
         <button onclick="showManualInput('${chapterId}')" style="flex:1;padding:12px;background:var(--blue);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">
-          ✍️ Nhập Thủ Công
+          ?? Nh?p Th? C�ng
         </button>
         <button onclick="showImportForm('${chapterId}')" style="flex:1;padding:12px;background:var(--green);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">
-          📊 Import Excel/CSV
+          ?? Import Excel/CSV
         </button>
         <button onclick="downloadSamplePrompt()" style="flex:1;padding:12px;background:var(--orange);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600">
-          📥 Tải Sample
+          ?? T?i Sample
         </button>
       </div>
 
@@ -42,34 +42,34 @@ function aiFixChapter(chapterId) {
   `;
 }
 
-// ── Hiện form nhập thủ công ──
+// -- Hi?n form nh?p th? c�ng --
 function showManualInput(chapterId) {
   const container = document.getElementById('input-container');
   container.innerHTML = `
     <div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:8px">
-      <h4 style="margin-top:0">Nhập từ vựng mới</h4>
+      <h4 style="margin-top:0">Nh?p t? v?ng m?i</h4>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <input id="input-chinese" type="text" placeholder="Từ tiếng Trung (e.g., 图书城)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
-        <input id="input-pinyin" type="text" placeholder="Pinyin (e.g., túshūchéng)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
+        <input id="input-chinese" type="text" placeholder="T? ti?ng Trung (e.g., ???)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
+        <input id="input-pinyin" type="text" placeholder="Pinyin (e.g., t�shuch�ng)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <input id="input-hanviet" type="text" placeholder="Hán-Việt (e.g., 圖書城)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
-        <input id="input-vietnamese" type="text" placeholder="Nghĩa Việt (e.g., thành phố sách)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
+        <input id="input-hanviet" type="text" placeholder="H�n-Vi?t (e.g., ???)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
+        <input id="input-vietnamese" type="text" placeholder="Nghia Vi?t (e.g., th�nh ph? s�ch)" style="padding:8px;border:1px solid var(--border);border-radius:4px">
       </div>
-      <textarea id="input-example" placeholder="Ví dụ tiếng Trung (e.g., 我喜欢去图书城看书。)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;min-height:60px;font-family:monospace;font-size:12px"></textarea>
+      <textarea id="input-example" placeholder="V� d? ti?ng Trung (e.g., ??????????)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;min-height:60px;font-family:monospace;font-size:12px"></textarea>
       <div style="margin-top:12px;display:flex;gap:8px">
         <button onclick="addManualCard('${chapterId}')" style="flex:1;padding:10px;background:var(--green);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600">
-          ✅ Thêm Từ
+          ? Th�m T?
         </button>
         <button onclick="addAnotherCard('${chapterId}')" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600">
-          ➕ Thêm Tiếp
+          ? Th�m Ti?p
         </button>
       </div>
     </div>
   `;
 }
 
-// ── Thêm từ thủ công ──
+// -- Th�m t? th? c�ng --
 function addManualCard(chapterId) {
   const chinese = document.getElementById('input-chinese').value.trim();
   const pinyin = document.getElementById('input-pinyin').value.trim();
@@ -78,7 +78,7 @@ function addManualCard(chapterId) {
   const example = document.getElementById('input-example').value.trim();
 
   if (!chinese || !pinyin || !vietnamese) {
-    toast('Vui lòng nhập: Từ Trung, Pinyin, Nghĩa Việt', 'error');
+    toast('Vui l�ng nh?p: T? Trung, Pinyin, Nghia Vi?t', 'error');
     return;
   }
 
@@ -97,7 +97,7 @@ function addManualCard(chapterId) {
   });
 
   State.save();
-  toast('✅ Đã thêm từ: ' + chinese, 'success');
+  toast('? �� th�m t?: ' + chinese, 'success');
   
   document.getElementById('input-chinese').value = '';
   document.getElementById('input-pinyin').value = '';
@@ -106,49 +106,49 @@ function addManualCard(chapterId) {
   document.getElementById('input-example').value = '';
   document.getElementById('input-chinese').focus();
   
-  // Cập nhật UI
+  // C?p nh?t UI
   renderLibrary();
   renderDashboard();
   
-  // Cập nhật flashcard deck selector để đồng bộ chương thủ công
+  // C?p nh?t flashcard deck selector d? d?ng b? chuong th? c�ng
   if (typeof refreshDeckSelect === 'function') {
     refreshDeckSelect();
   }
 }
 
-// ── Thêm từ tiếp theo ──
+// -- Th�m t? ti?p theo --
 function addAnotherCard(chapterId) {
   addManualCard(chapterId);
   showManualInput(chapterId);
 }
 
-// ── Hiện form import Excel/CSV ──
+// -- Hi?n form import Excel/CSV --
 function showImportForm(chapterId) {
   const container = document.getElementById('input-container');
   container.innerHTML = `
     <div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:8px">
-      <h4 style="margin-top:0">Import từ Excel/CSV</h4>
+      <h4 style="margin-top:0">Import t? Excel/CSV</h4>
       <p style="font-size:12px;color:var(--text-2);margin:0 0 12px 0">
-        Định dạng: Từ Trung | Pinyin | Hán-Việt | Nghĩa Việt | Ví dụ
+        �?nh d?ng: T? Trung | Pinyin | H�n-Vi?t | Nghia Vi?t | V� d?
       </p>
-      <textarea id="import-text" placeholder="Dán nội dung CSV/Excel ở đây (mỗi dòng 1 từ)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;min-height:120px;font-family:monospace;font-size:12px"></textarea>
+      <textarea id="import-text" placeholder="D�n n?i dung CSV/Excel ? d�y (m?i d�ng 1 t?)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;min-height:120px;font-family:monospace;font-size:12px"></textarea>
       <div style="margin-top:12px;display:flex;gap:8px">
         <button onclick="importFromText('${chapterId}')" style="flex:1;padding:10px;background:var(--green);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600">
-          📥 Import
+          ?? Import
         </button>
         <button onclick="downloadSampleCSV()" style="flex:1;padding:10px;background:var(--orange);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600">
-          📥 Tải Sample CSV
+          ?? T?i Sample CSV
         </button>
       </div>
     </div>
   `;
 }
 
-// ── Import từ text ──
+// -- Import t? text --
 function importFromText(chapterId) {
   const text = document.getElementById('import-text').value.trim();
   if (!text) {
-    toast('Vui lòng dán nội dung', 'error');
+    toast('Vui l�ng d�n n?i dung', 'error');
     return;
   }
 
@@ -184,37 +184,37 @@ function importFromText(chapterId) {
   }
 
   if (added === 0) {
-    toast('❌ Không tìm thấy từ nào hợp lệ', 'error');
+    toast('? Kh�ng t�m th?y t? n�o h?p l?', 'error');
     return;
   }
 
   State.save();
   renderLibrary();
   renderDashboard();
-  toast(`✅ Đã import ${added} từ!`, 'success', '🎉');
+  toast(`? �� import ${added} t?!`, 'success', '??');
   
-  // Cập nhật flashcard deck selector để đồng bộ chương thủ công
+  // C?p nh?t flashcard deck selector d? d?ng b? chuong th? c�ng
   if (typeof refreshDeckSelect === 'function') {
     refreshDeckSelect();
   }
   
-  // Đóng modal và mở chi tiết chương
+  // ��ng modal v� m? chi ti?t chuong
   closeModal('modal-chapter');
   setTimeout(() => openChapter(chapterId), 300);
 }
 
-// ── Tải sample CSV ──
+// -- T?i sample CSV --
 function downloadSampleCSV() {
-  const sample = `图书城|túshūchéng|圖書城|thành phố sách|我喜欢去图书城看书。
-钥匙|yàoshi|鑰匙|chìa khóa|我忘记拔下钥匙了。
-忘记|wàngjì|忘記|quên|我忘记了你的名字。
-拔|báo|拔|kéo ra|请拔下钥匙。
-下来|xiàlai|下來|xuống|请下来帮我。
-学校|xuéxiào|學校|trường học|我每天去学校。
-书|shū|書|sách|这是一本好书。
-城|chéng|城|thành phố|北京是一个大城。
-看|kàn|看|nhìn|我喜欢看书。
-去|qù|去|đi|我想去图书城。`;
+  const sample = `???|t�shuch�ng|???|th�nh ph? s�ch|??????????
+??|y�oshi|??|ch�a kh�a|?????????
+??|w�ngj�|??|qu�n|?????????
+?|b�o|?|k�o ra|??????
+??|xi�lai|??|xu?ng|??????
+??|xu�xi�o|??|tru?ng h?c|???????
+?|shu|?|s�ch|???????
+?|ch�ng|?|th�nh ph?|????????
+?|k�n|?|nh�n|??????
+?|q�|?|di|???????`;
 
   const blob = new Blob([sample], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -223,34 +223,34 @@ function downloadSampleCSV() {
   a.download = 'sample-vocabulary.csv';
   a.click();
   URL.revokeObjectURL(url);
-  toast('✅ Đã tải sample CSV!', 'success');
+  toast('? �� t?i sample CSV!', 'success');
 }
 
-// ── Tải sample prompt ──
+// -- T?i sample prompt --
 function downloadSamplePrompt() {
-  const sample = `📋 SAMPLE PROMPT - Định dạng nhập từ vựng
+  const sample = `?? SAMPLE PROMPT - �?nh d?ng nh?p t? v?ng
 
-Định dạng: Từ Trung | Pinyin | Hán-Việt | Nghĩa Việt | Ví dụ
+�?nh d?ng: T? Trung | Pinyin | H�n-Vi?t | Nghia Vi?t | V� d?
 
-Hướng dẫn:
-1. Từ Trung: Viết chữ Hán gốc (e.g., 图书城)
-2. Pinyin: Viết pinyin có dấu (e.g., túshūchéng)
-3. Hán-Việt: Viết chữ Hán tương ứng (e.g., 圖書城)
-4. Nghĩa Việt: Dịch nghĩa dựa trên bài khóa (e.g., thành phố sách)
-5. Ví dụ: Câu tiếng Trung sử dụng từ này (e.g., 我喜欢去图书城看书。)
+Hu?ng d?n:
+1. T? Trung: Vi?t ch? H�n g?c (e.g., ???)
+2. Pinyin: Vi?t pinyin c� d?u (e.g., t�shuch�ng)
+3. H�n-Vi?t: Vi?t ch? H�n tuong ?ng (e.g., ???)
+4. Nghia Vi?t: D?ch nghia d?a tr�n b�i kh�a (e.g., th�nh ph? s�ch)
+5. V� d?: C�u ti?ng Trung s? d?ng t? n�y (e.g., ??????????)
 
-Ví dụ mẫu:
-图书城|túshūchéng|圖書城|thành phố sách|我喜欢去图书城看书。
-钥匙|yàoshi|鑰匙|chìa khóa|我忘记拔下钥匙了。
-忘记|wàngjì|忘記|quên|我忘记了你的名字。
-拔|báo|拔|kéo ra|请拔下钥匙。
-下来|xiàlai|下來|xuống|请下来帮我。
+V� d? m?u:
+???|t�shuch�ng|???|th�nh ph? s�ch|??????????
+??|y�oshi|??|ch�a kh�a|?????????
+??|w�ngj�|??|qu�n|?????????
+?|b�o|?|k�o ra|??????
+??|xi�lai|??|xu?ng|??????
 
-Lưu ý:
-- Mỗi dòng 1 từ
-- Dùng dấu | để phân tách các trường
-- Không để trống các trường bắt buộc (Từ Trung, Pinyin, Nghĩa Việt)
-- Ví dụ nên là câu thực tế hoặc từ văn chương`;
+Luu �:
+- M?i d�ng 1 t?
+- D�ng d?u | d? ph�n t�ch c�c tru?ng
+- Kh�ng d? tr?ng c�c tru?ng b?t bu?c (T? Trung, Pinyin, Nghia Vi?t)
+- V� d? n�n l� c�u th?c t? ho?c t? van chuong`;
 
   const blob = new Blob([sample], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -259,31 +259,31 @@ Lưu ý:
   a.download = 'sample-prompt.txt';
   a.click();
   URL.revokeObjectURL(url);
-  toast('✅ Đã tải sample prompt!', 'success');
+  toast('? �� t?i sample prompt!', 'success');
 }
 
-// ── Tạo chương mới ──
+// -- T?o chuong m?i --
 function showCreateChapterForm() {
   const modal = document.getElementById('modal-ch-body');
   if (!modal) {
-    toast('Lỗi: Không tìm thấy modal', 'error');
+    toast('L?i: Kh�ng t�m th?y modal', 'error');
     return;
   }
 
   modal.innerHTML = `
     <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:20px">
-      <h3 style="margin-top:0;margin-bottom:16px">➕ Tạo chương mới</h3>
+      <h3 style="margin-top:0;margin-bottom:16px">? T?o chuong m?i</h3>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div>
-          <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:6px">Tên chương:</label>
-          <input id="new-chapter-name" type="text" placeholder="e.g., Chương 1: Giới thiệu" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-size:14px">
+          <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:6px">T�n chuong:</label>
+          <input id="new-chapter-name" type="text" placeholder="e.g., Chuong 1: Gi?i thi?u" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:4px;font-size:14px">
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="createNewChapter()" style="flex:1;padding:10px;background:var(--green);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600">
-            ✅ Tạo chương
+            ? T?o chuong
           </button>
           <button onclick="closeModal('modal-chapter')" style="flex:1;padding:10px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-weight:600">
-            ❌ Hủy
+            ? H?y
           </button>
         </div>
       </div>
@@ -293,16 +293,16 @@ function showCreateChapterForm() {
   openModal('modal-chapter');
 }
 
-// ── Tạo chương mới và nhập từ vựng ──
+// -- T?o chuong m?i v� nh?p t? v?ng --
 function createNewChapter() {
   const name = document.getElementById('new-chapter-name').value.trim();
   
   if (!name) {
-    toast('Vui lòng nhập tên chương', 'error');
+    toast('Vui l�ng nh?p t�n chuong', 'error');
     return;
   }
 
-  // Tạo chương mới
+  // T?o chuong m?i
   const chapterId = uid();
   const newChapter = {
     id: chapterId,
@@ -319,55 +319,55 @@ function createNewChapter() {
   State.chapters.push(newChapter);
   State.save();
   
-  // Cập nhật UI
+  // C?p nh?t UI
   renderLibrary();
   renderDashboard();
   
-  // Cập nhật flashcard deck selector
+  // C?p nh?t flashcard deck selector
   if (typeof refreshDeckSelect === 'function') {
     refreshDeckSelect();
   }
   
-  toast(`✅ Đã tạo chương: ${name}`, 'success');
+  toast(`? �� t?o chuong: ${name}`, 'success');
   
-  // Đóng modal hiện tại
+  // ��ng modal hi?n t?i
   closeModal('modal-chapter');
   
-  // Mở form nhập từ vựng cho chương mới
+  // M? form nh?p t? v?ng cho chuong m?i
   setTimeout(() => {
     aiFixChapter(chapterId);
     openModal('modal-chapter');
   }, 300);
 }
 
-// ── Chọn chương để nhập từ vựng ──
+// -- Ch?n chuong d? nh?p t? v?ng --
 function aiFixAllChapters() {
   const chapters = State.chapters;
   if (!chapters || chapters.length === 0) {
-    toast('Chưa có chương nào. Vui lòng tải PDF trước.', 'info');
+    toast('Chua c� chuong n�o. Vui l�ng t?i PDF tru?c.', 'info');
     return;
   }
 
-  // Mở modal để chọn chương
+  // M? modal d? ch?n chuong
   const modal = document.getElementById('modal-ch-body');
   if (!modal) {
-    toast('Lỗi: Không tìm thấy modal', 'error');
+    toast('L?i: Kh�ng t�m th?y modal', 'error');
     return;
   }
 
   const list = chapters.map(ch => `
     <div style="padding:12px;margin:8px 0;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:6px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(52,152,219,0.2)'" onmouseout="this.style.background='rgba(52,152,219,0.1)'" onclick="aiFixChapter('${ch.id}')">
-      <strong>${ch.title}</strong> <span style="color:var(--text-2);font-size:12px">(${State.cards.filter(c => c.chapterId === ch.id).length} từ)</span>
+      <strong>${ch.title}</strong> <span style="color:var(--text-2);font-size:12px">(${State.cards.filter(c => c.chapterId === ch.id).length} t?)</span>
     </div>
   `).join('');
 
   modal.innerHTML = `
     <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:10px;padding:20px">
-      <h3 style="margin-top:0;margin-bottom:16px">📚 Chọn chương để nhập từ vựng</h3>
+      <h3 style="margin-top:0;margin-bottom:16px">?? Ch?n chuong d? nh?p t? v?ng</h3>
       ${list}
     </div>
   `;
 
-  // Mở modal
+  // M? modal
   openModal('modal-chapter');
 }

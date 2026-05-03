@@ -20,7 +20,7 @@ const Settings = {
 
   // Load từ Supabase
   async loadFromSupabase() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -61,7 +61,7 @@ const Settings = {
 
   // Save to Supabase
   async saveToSupabase(settings) {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {

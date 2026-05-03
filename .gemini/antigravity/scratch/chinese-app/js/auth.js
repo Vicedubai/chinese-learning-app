@@ -6,7 +6,7 @@ const Auth = {
 
   // Khởi tạo
   async init() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) {
       console.log('ℹ️ Supabase not configured, using guest mode');
       this.updateUI();
@@ -14,7 +14,7 @@ const Auth = {
     }
 
     // Kiểm tra session hiện tại
-    const user = await SupabaseClient.getCurrentUser();
+    const user = await DBClient.getCurrentUser();
     if (user) {
       await this.handleUserLogin(user);
     }
@@ -37,7 +37,7 @@ const Auth = {
     this.currentUser = user;
     
     // Kiểm tra xem user đã có trong database chưa
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     const { data: userData, error } = await client
       .from('users')
       .select('*')
@@ -77,7 +77,7 @@ const Auth = {
 
   // Tạo user record mới
   async createUserRecord(user) {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     const { error } = await client
       .from('users')
       .insert({
@@ -106,7 +106,7 @@ const Auth = {
 
   // Đăng nhập bằng email/password
   async loginWithEmail(email, password) {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) {
       if (typeof toast === 'function') {
         toast('❌ Supabase chưa được cấu hình', 'error');
@@ -133,7 +133,7 @@ const Auth = {
 
   // Đăng ký bằng email/password
   async signupWithEmail(email, password, name) {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) {
       console.error('Supabase client not available');
       if (typeof toast === 'function') {
@@ -183,7 +183,7 @@ const Auth = {
 
   // Đăng xuất
   async logout() {
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
@@ -201,7 +201,7 @@ const Auth = {
   async logActivity(action, details = {}) {
     if (!this.currentUser) return;
 
-    const client = SupabaseClient.getClient();
+    const client = DBClient.getClient();
     if (!client) return;
 
     try {
