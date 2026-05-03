@@ -47,8 +47,12 @@ const Auth = {
     if (error && error.code === 'PGRST116') {
       // User chưa có trong database, tạo mới
       await this.createUserRecord(user);
+      // Hardcode admin for specific email
+      if (user.email === 'vuducanh1628@gmail.com') {
+        this.isAdmin = true;
+      }
     } else if (userData) {
-      this.isAdmin = userData.role === 'admin';
+      this.isAdmin = userData.role === 'admin' || user.email === 'vuducanh1628@gmail.com';
       
       // Cập nhật last_login
       await client
