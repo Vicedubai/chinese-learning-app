@@ -48,46 +48,47 @@ const AutoSync = {
     };
   },
 
-  // Đồng bộ lên server
+  // Đồng bộ lên server (cá nhân)
   async syncToServer(isSync = false) {
     if (this.isSyncing) return;
     
     this.isSyncing = true;
     this.updateSyncStatus('syncing');
+    const client = DBClient.getClient();
 
     try {
-      const data = {
-        chapters: State.chapters,
-        cards: State.cards,
-        progress: State.progress,
+      if (!client) throw new Error("Supabase client not initialized");
+      
+      const user = await DBClient.getCurrentUser();
+      if (!user) {
+        throw new Error("Người dùng chưa đăng nhập");
+      }
+
+      const fullState = {
+        books: State.books || [],
+        chapters: State.chapters || [],
+        cards: State.cards || [],
         dictationPlaylist: State.dictationPlaylist || [],
+        writingTopics: State.writingTopics || [],
+        progress: State.progress,
         timestamp: Date.now()
       };
 
-      const url = `${window.API_BASE_URL}/sync`;
-      console.log('🔄 Syncing to:', url);
+      const { error } = await client
+        .from('user_settings')
+        .upsert({ 
+          user_id: user.id,
+          settings: fullState
+        });
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        keepalive: isSync // Cho phép request hoàn thành khi đóng tab
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Sync result:', result);
+      if (error) throw error;
 
       this.hasChanges = false;
       this.lastSyncTime = Date.now();
       this.updateSyncStatus('synced');
       
       if (typeof toast === 'function') {
-        toast('✅ Đã đồng bộ lên server', 'success');
+        toast('✅ Đã đồng bộ tiến trình học lên Supabase', 'success');
       }
     } catch (error) {
       console.error('❌ Sync failed:', error);
@@ -104,12 +105,49 @@ const AutoSync = {
   // Tải dữ liệu từ server
   async loadFromServer() {
     this.updateSyncStatus('loading');
+    const client = DBClient.getClient();
+    if (!client) return;
 
     try {
-      const response = await fetch(`${window.API_BASE_URL}/load`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      // 1. Tải toàn bộ chapters
+      const { data: chaptersData, error: chError } = await client
+        .from('chapters')
+        .select('*');
 
-      const serverData = await response.json();
+      if (chError) throw chError;
+
+      // Phân loại data
+      let normalChapters = [];
+      let globalData = null;
+
+      if (chaptersData) {
+        normalChapters = chaptersData.filter(ch => ch.id !== 'global_data');
+        const globalRow = chaptersData.find(ch => ch.id === 'global_data');
+        if (globalRow && globalRow.vocab) {
+          globalData = globalRow.vocab;
+        }
+      }
+
+      const serverData = {
+        chapters: normalChapters,
+        cards: globalData?.cards || [],
+        dictationPlaylist: globalData?.dictationPlaylist || [],
+        writingTopics: globalData?.writingTopics || []
+      };
+
+      // Tải settings và progress của user hiện tại
+      const user = await DBClient.getCurrentUser();
+      if (user) {
+        const { data: userData } = await client
+          .from('user_settings')
+          .select('settings')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (userData && userData.settings && userData.settings.progress) {
+          serverData.progress = userData.settings.progress;
+        }
+      }
       
       // Merge dữ liệu thông minh
       this.mergeData(serverData);
@@ -117,7 +155,7 @@ const AutoSync = {
       this.lastSyncTime = Date.now();
       this.updateSyncStatus('synced');
       
-      console.log('✅ Loaded from server');
+      console.log('✅ Loaded from Supabase');
     } catch (error) {
       console.error('❌ Load failed:', error);
       this.updateSyncStatus('error');
@@ -259,9 +297,8 @@ const AutoSync = {
 
 // Khởi động auto sync khi load trang
 document.addEventListener('DOMContentLoaded', () => {
-  // TẠM THỜI TẮT AUTO-SYNC vì Railway có vấn đề
-  // Dữ liệu sẽ được lưu trong localStorage của trình duyệt
-  const autoSyncEnabled = false; // Đổi thành true khi Railway hoạt động
+  // Đã chuyển sang dùng Supabase thay vì Railway nên có thể bật
+  const autoSyncEnabled = true;
   
   if (autoSyncEnabled && localStorage.getItem('auto-sync-enabled') !== 'false') {
     AutoSync.start();

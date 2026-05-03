@@ -725,17 +725,16 @@ Bài 15: Trang 36-37..."
         </div>
       </div>
 
-      <!-- Quản lý Chapters -->
+      <!-- Quản lý Dữ Liệu -->
       <div class="card" style="margin-top:24px">
-        <h3 style="margin-bottom:16px;font-size:16px">📚 Quản lý Chapters</h3>
+        <h3 style="margin-bottom:16px;font-size:16px">📚 Quản lý Dữ liệu Hệ thống</h3>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="Admin.syncChaptersToSupabase()">☁️ Đồng bộ Chapters lên Supabase</button>
+          <button class="btn btn-primary" id="btn-sync-global" onclick="Admin.syncGlobalData()">☁️ Đồng bộ toàn bộ Kiến Thức lên Supabase</button>
           <button class="btn btn-secondary" onclick="navigate('library')">📚 Quản lý trong Library</button>
           <button class="btn btn-secondary" onclick="showExportAllModal()">📤 Xuất tất cả</button>
         </div>
         <p style="margin-top:12px;font-size:13px;color:var(--text-3)">
-          Hiện có <strong>${State.chapters.length}</strong> chapters trong localStorage. 
-          Click "Đồng bộ" để lưu lên Supabase.
+          Bạn có thể thêm Flashcard, tạo danh sách Bài Luyện Nghe, v.v ở các chức năng khác, sau đó nhấn "Đồng bộ" để lưu thành dữ liệu Global cho mọi User.
         </p>
       </div>
     </div>

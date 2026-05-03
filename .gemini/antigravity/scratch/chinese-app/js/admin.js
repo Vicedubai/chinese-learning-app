@@ -275,13 +275,20 @@ const Admin = {
   },
 
   // Sync chapters to Supabase
-  async syncChaptersToSupabase() {
+  // Sync toàn bộ dữ liệu Global (Chapters, Cards, Dictation, v.v.)
+  async syncGlobalData() {
     const client = DBClient.getClient();
     if (!client) return;
 
+    const btn = document.getElementById('btn-sync-global');
+    if (btn) {
+      btn.innerText = 'Đang đồng bộ...';
+      btn.disabled = true;
+    }
+
     try {
-      // Lấy chapters từ State
-      const chapters = State.chapters.map(ch => ({
+      // 1. Lưu các chapters bình thường
+      const normalChapters = State.chapters.map(ch => ({
         id: ch.id,
         name: ch.name,
         book_name: ch.bookName || '',
@@ -290,20 +297,43 @@ const Admin = {
         created_by: Auth.currentUser?.id
       }));
 
-      // Upsert vào Supabase
+      if (normalChapters.length > 0) {
+        const { error: chError } = await client.from('chapters').upsert(normalChapters);
+        if (chError) throw chError;
+      }
+
+      // 2. Lưu Global Data dưới dạng một chapter đặc biệt để mọi người đều có thể đọc
+      const globalData = {
+        cards: State.cards,
+        dictationPlaylist: State.dictationPlaylist,
+        writingTopics: State.writingTopics || []
+      };
+
       const { error } = await client
         .from('chapters')
-        .upsert(chapters);
+        .upsert({ 
+          id: 'global_data',
+          name: 'Dữ liệu dùng chung',
+          book_name: 'System',
+          page_range: '0',
+          vocab: globalData,
+          created_by: Auth.currentUser.id
+        });
 
       if (error) throw error;
 
       if (typeof toast === 'function') {
-        toast(`✅ Đã đồng bộ ${chapters.length} chapters lên Supabase`, 'success');
+        toast(`✅ Đã đồng bộ toàn bộ dữ liệu hệ thống (Flashcards, Nghe chép...)`, 'success');
       }
     } catch (error) {
-      console.error('Error syncing chapters:', error);
+      console.error('Error syncing global data:', error);
       if (typeof toast === 'function') {
-        toast('❌ Lỗi đồng bộ chapters', 'error');
+        toast('❌ Lỗi đồng bộ: ' + (error.message || JSON.stringify(error)), 'error');
+      }
+    } finally {
+      if (btn) {
+        btn.innerText = '☁️ Đồng bộ toàn bộ Kiến Thức lên Supabase';
+        btn.disabled = false;
       }
     }
   }
