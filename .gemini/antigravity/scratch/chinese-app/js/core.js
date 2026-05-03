@@ -1,6 +1,108 @@
 // ===== CONFIGURATION =====
 window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-production.up.railway.app';
 
+// ===== SUPABASE CLIENT & AUTH =====
+const SUPABASE_URL = 'https://kangjlimeanujfpjissp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthbmdqbGltZWFudWpmcGppc3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MjA5NTQsImV4cCI6MjA5MzM5Njk1NH0.B1H8hrN3HklEovKvm0p8zWWcQmmcuBrVtgl2osXAC7Q';
+
+window.supabaseClient = null;
+if (typeof supabase !== 'undefined') {
+  window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+let currentUser = null;
+let isSignUpMode = false;
+
+function openAuthModal() {
+  const modal = document.getElementById('auth-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('auth-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function toggleAuthMode() {
+  isSignUpMode = !isSignUpMode;
+  document.getElementById('auth-title').innerText = isSignUpMode ? 'Đăng ký tài khoản' : 'Đăng nhập tài khoản';
+  document.querySelector('#auth-modal .btn-primary').innerText = isSignUpMode ? 'Đăng ký' : 'Đăng nhập';
+  document.querySelector('#auth-modal .text-sm').innerHTML = isSignUpMode ? 
+    'Đã có tài khoản? <a href="#" onclick="toggleAuthMode()" style="color:var(--red-light);text-decoration:none">Đăng nhập</a>' : 
+    'Chưa có tài khoản? <a href="#" onclick="toggleAuthMode()" style="color:var(--red-light);text-decoration:none">Đăng ký ngay</a>';
+}
+
+async function handleAuthSubmit() {
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) return toast('Vui lòng nhập email và mật khẩu', 'error');
+  
+  if (!window.supabaseClient) return toast('Lỗi kết nối database', 'error');
+
+  const btn = document.querySelector('#auth-modal .btn-primary');
+  const originalText = btn.innerText;
+  btn.innerText = 'Đang xử lý...';
+  btn.disabled = true;
+
+  try {
+    let error;
+    if (isSignUpMode) {
+      const res = await window.supabaseClient.auth.signUp({ email, password });
+      error = res.error;
+      if (!error && res.data?.user) {
+        await window.supabaseClient.from('users').upsert([{ id: res.data.user.id, email: email }], { onConflict: 'id' });
+        await window.supabaseClient.from('user_settings').upsert([{ user_id: res.data.user.id }], { onConflict: 'user_id' });
+      }
+    } else {
+      const res = await window.supabaseClient.auth.signInWithPassword({ email, password });
+      error = res.error;
+    }
+
+    if (error) throw error;
+    
+    closeAuthModal();
+    toast('Đăng nhập thành công!', 'success');
+    await checkSession(); 
+  } catch (err) {
+    toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+}
+
+async function checkSession() {
+  if (!window.supabaseClient) return;
+  const { data: { session } } = await window.supabaseClient.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    const syncStatus = document.getElementById('auto-sync-status');
+    if (syncStatus) syncStatus.innerHTML = '<span style="color:var(--green-light)">☁️ Đã đồng bộ</span>';
+    
+    const authText = document.getElementById('nav-auth-text');
+    if (authText) authText.innerText = currentUser.email.split('@')[0];
+    
+    State.loadFromCloud(); 
+  } else {
+    currentUser = null;
+    const syncStatus = document.getElementById('auto-sync-status');
+    if (syncStatus) syncStatus.innerHTML = '<span style="color:var(--text-3)">💾 Lưu trên máy</span>';
+    
+    const authText = document.getElementById('nav-auth-text');
+    if (authText) authText.innerText = 'Tài khoản';
+  }
+}
+
+// Auto check session on startup
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.supabaseClient) {
+    checkSession();
+    window.supabaseClient.auth.onAuthStateChange((event, session) => {
+      checkSession();
+    });
+  }
+});
+
 // ===== STORAGE =====
 const DB = {
   get: (key, def = null) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } },
@@ -74,35 +176,56 @@ const State = {
     DB.set('session', this.session);
   },
   async sync() {
+    if (!window.supabaseClient || !currentUser) return; // Silent if not logged in
+    
     try {
-      const res = await fetch(`${window.API_BASE_URL}/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ books: this.books, chapters: this.chapters, cards: this.cards, dictationPlaylist: this.dictationPlaylist, progress: this.progress })
-      });
-      if (res.ok) toast('☁️ Đã đồng bộ dữ liệu lên Server (SQLite)', 'success');
+      const fullState = {
+        books: this.books,
+        chapters: this.chapters,
+        cards: this.cards,
+        dictationPlaylist: this.dictationPlaylist,
+        progress: this.progress
+      };
+      
+      const { error } = await window.supabaseClient
+        .from('user_settings')
+        .update({ settings: fullState })
+        .eq('user_id', currentUser.id);
+        
+      if (error) throw error;
+      console.log('☁️ Đã đồng bộ ngầm dữ liệu lên Supabase');
     } catch (e) {
-      toast('Cần bật Server Python để đồng bộ dữ liệu!', 'error');
+      console.error(e);
+      toast('Lỗi đồng bộ Supabase: ' + e.message, 'error');
     }
   },
   async loadFromCloud() {
+    if (!window.supabaseClient || !currentUser) return;
+    
     try {
-      const res = await fetch(`${window.API_BASE_URL}/load`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Object.keys(data).length === 0) return;
-        this.books = data.books || [];
-        this.chapters = data.chapters || [];
-        this.cards = data.cards || [];
-        this.dictationPlaylist = data.dictationPlaylist || [];
-        this.progress = data.progress || this.progress;
+      const { data, error } = await window.supabaseClient
+        .from('user_settings')
+        .select('settings')
+        .eq('user_id', currentUser.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.settings && Object.keys(data.settings).length > 0) {
+        this.books = data.settings.books || [];
+        this.chapters = data.settings.chapters || [];
+        this.cards = data.settings.cards || [];
+        this.dictationPlaylist = data.settings.dictationPlaylist || [];
+        this.progress = data.settings.progress || this.progress;
         this.save();
-        toast('☁️ Đã tải dữ liệu từ Server thành công!', 'success');
+        toast('☁️ Đã tải dữ liệu từ Supabase thành công!', 'success');
         if (typeof renderLibrary === 'function') renderLibrary();
         if (typeof renderDashboard === 'function') renderDashboard();
         if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
       }
-    } catch (e) { console.log('Backend not available for auto-load'); }
+    } catch (e) {
+      console.error(e);
+    }
   },
   addXP(n) {
     this.progress.xp = (this.progress.xp || 0) + n;
