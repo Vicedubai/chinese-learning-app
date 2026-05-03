@@ -56,7 +56,7 @@ git push -u origin main
 Sửa file `js/core.js`:
 ```javascript
 // Dòng 2: Đổi thành URL Railway của bạn
-window.API_BASE_URL = window.API_BASE_URL || 'https://your-app.railway.app';
+window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-production.up.railway.app';
 ```
 
 Push lại:
