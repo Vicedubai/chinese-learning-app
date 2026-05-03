@@ -1,9 +1,8 @@
 // ===== SUPABASE CLIENT =====
 // File này sẽ kết nối với Supabase
 
-// ⚠️ SAU KHI SETUP SUPABASE, THAY ĐỔI 2 DÒNG DƯỚI ĐÂY:
-const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // Thay bằng URL từ Supabase
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Thay bằng anon key từ Supabase
+const SUPABASE_URL = 'https://kangjlimeanujfpjissp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthbmdqbGltZWFudWpmcGppc3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MjA5NTQsImV4cCI6MjA5MzM5Njk1NH0.B1H8hrN3HklEovKvm0p8zWWcQmmcuBrVtgl2osXAC7Q';
 
 // Khởi tạo Supabase client
 let supabase = null;

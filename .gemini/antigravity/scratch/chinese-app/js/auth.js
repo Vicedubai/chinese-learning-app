@@ -1,0 +1,240 @@
+// ===== AUTHENTICATION SYSTEM =====
+
+const Auth = {
+  currentUser: null,
+  isAdmin: false,
+
+  // Khởi tạo
+  async init() {
+    const client = SupabaseClient.getClient();
+    if (!client) {
+      console.log('ℹ️ Supabase not configured, using guest mode');
+      this.updateUI();
+      return;
+    }
+
+    // Kiểm tra session hiện tại
+    const user = await SupabaseClient.getCurrentUser();
+    if (user) {
+      await this.handleUserLogin(user);
+    }
+
+    // Lắng nghe thay đổi auth state
+    client.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      if (event === 'SIGNED_IN' && session?.user) {
+        await this.handleUserLogin(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        this.handleUserLogout();
+      }
+    });
+
+    this.updateUI();
+  },
+
+  // Xử lý khi user đăng nhập
+  async handleUserLogin(user) {
+    this.currentUser = user;
+    
+    // Kiểm tra xem user đã có trong database chưa
+    const client = SupabaseClient.getClient();
+    const { data: userData, error } = await client
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // User chưa có trong database, tạo mới
+      await this.createUserRecord(user);
+    } else if (userData) {
+      this.isAdmin = userData.role === 'admin';
+      
+      // Cập nhật last_login
+      await client
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', user.id);
+    }
+
+    // Log activity
+    await this.logActivity('login', { email: user.email });
+
+    this.updateUI();
+    
+    if (typeof toast === 'function') {
+      toast(`👋 Chào ${user.email}!`, 'success');
+    }
+  },
+
+  // Tạo user record mới
+  async createUserRecord(user) {
+    const client = SupabaseClient.getClient();
+    const { error } = await client
+      .from('users')
+      .insert({
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.name || user.email.split('@')[0],
+        role: 'user',
+        avatar_url: user.user_metadata?.avatar_url
+      });
+
+    if (error) {
+      console.error('Error creating user record:', error);
+    }
+  },
+
+  // Xử lý khi user đăng xuất
+  handleUserLogout() {
+    this.currentUser = null;
+    this.isAdmin = false;
+    this.updateUI();
+    
+    if (typeof toast === 'function') {
+      toast('👋 Đã đăng xuất', 'info');
+    }
+  },
+
+  // Đăng nhập bằng email/password
+  async loginWithEmail(email, password) {
+    const client = SupabaseClient.getClient();
+    if (!client) {
+      if (typeof toast === 'function') {
+        toast('❌ Supabase chưa được cấu hình', 'error');
+      }
+      return { error: 'Supabase not configured' };
+    }
+
+    try {
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      return { data };
+    } catch (error) {
+      console.error('Login error:', error);
+      if (typeof toast === 'function') {
+        toast(`❌ Lỗi đăng nhập: ${error.message}`, 'error');
+      }
+      return { error };
+    }
+  },
+
+  // Đăng ký bằng email/password
+  async signupWithEmail(email, password, name) {
+    const client = SupabaseClient.getClient();
+    if (!client) {
+      if (typeof toast === 'function') {
+        toast('❌ Supabase chưa được cấu hình', 'error');
+      }
+      return { error: 'Supabase not configured' };
+    }
+
+    try {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || email.split('@')[0]
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      if (typeof toast === 'function') {
+        toast('✅ Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.', 'success');
+      }
+      
+      return { data };
+    } catch (error) {
+      console.error('Signup error:', error);
+      if (typeof toast === 'function') {
+        toast(`❌ Lỗi đăng ký: ${error.message}`, 'error');
+      }
+      return { error };
+    }
+  },
+
+  // Đăng xuất
+  async logout() {
+    const client = SupabaseClient.getClient();
+    if (!client) return;
+
+    try {
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Logout error:', error);
+      if (typeof toast === 'function') {
+        toast(`❌ Lỗi đăng xuất: ${error.message}`, 'error');
+      }
+    }
+  },
+
+  // Log activity
+  async logActivity(action, details = {}) {
+    if (!this.currentUser) return;
+
+    const client = SupabaseClient.getClient();
+    if (!client) return;
+
+    try {
+      await client
+        .from('activity_log')
+        .insert({
+          user_id: this.currentUser.id,
+          action,
+          details
+        });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  },
+
+  // Cập nhật UI
+  updateUI() {
+    const userInfoEl = document.getElementById('user-info');
+    const loginBtnEl = document.getElementById('login-btn');
+    const adminPanelEl = document.getElementById('admin-panel-nav');
+
+    if (!userInfoEl || !loginBtnEl) return;
+
+    if (this.currentUser) {
+      // Đã đăng nhập
+      userInfoEl.style.display = 'block';
+      loginBtnEl.style.display = 'none';
+      
+      const emailEl = document.getElementById('user-email');
+      const nameEl = document.getElementById('user-name');
+      
+      if (emailEl) emailEl.textContent = this.currentUser.email;
+      if (nameEl) nameEl.textContent = this.currentUser.user_metadata?.name || 'User';
+
+      // Hiện admin panel nếu là admin
+      if (adminPanelEl) {
+        adminPanelEl.style.display = this.isAdmin ? 'block' : 'none';
+      }
+    } else {
+      // Chưa đăng nhập (Guest)
+      userInfoEl.style.display = 'none';
+      loginBtnEl.style.display = 'block';
+      
+      if (adminPanelEl) {
+        adminPanelEl.style.display = 'none';
+      }
+    }
+  }
+};
+
+// Khởi tạo khi load trang
+document.addEventListener('DOMContentLoaded', () => {
+  Auth.init();
+});
+
+// Export
+window.Auth = Auth;
