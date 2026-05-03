@@ -1,5 +1,5 @@
 // ===== CONFIGURATION =====
-window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-production.up.railway.app'; // URL Server Railway
+window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-production.up.railway.app';
 
 // ===== STORAGE =====
 const DB = {
