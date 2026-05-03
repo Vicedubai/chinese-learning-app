@@ -699,43 +699,94 @@ Bài 15: Trang 36-37..."
     <div class="page" id="page-admin">
       <div class="page-header">
         <h2>🔐 Admin Panel</h2>
-        <p>Quản lý users, chapters và xem thống kê</p>
+        <p>Quản lý nội dung học, đồng bộ dữ liệu lên cloud cho mọi học viên</p>
       </div>
 
       <!-- Thống kê -->
       <div id="admin-stats"></div>
 
-      <div class="grid-2">
-        <!-- Quản lý Users -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="font-size:16px">👥 Quản lý Users</h3>
-            <button class="btn btn-sm btn-secondary" onclick="Admin.loadUsers();Admin.renderUserList()">🔄 Làm mới</button>
-          </div>
-          <div id="admin-user-list" style="max-height:400px;overflow-y:auto"></div>
-        </div>
+      <!-- TAB NAV -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:8px" id="admin-tab-bar">
+        <button class="btn btn-primary btn-sm" id="admin-tab-sync" onclick="adminShowTab('sync')">☁️ Đồng bộ</button>
+        <button class="btn btn-ghost btn-sm" id="admin-tab-chapters" onclick="adminShowTab('chapters')">📚 Quản lý Chương</button>
+        <button class="btn btn-ghost btn-sm" id="admin-tab-dictation" onclick="adminShowTab('dictation')">🎧 Nghe chép</button>
+        <button class="btn btn-ghost btn-sm" id="admin-tab-users" onclick="adminShowTab('users')">👥 Users</button>
+      </div>
 
-        <!-- Activity Log -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="font-size:16px">📊 Activity Log</h3>
-            <button class="btn btn-sm btn-secondary" onclick="Admin.renderActivityLog()">🔄 Làm mới</button>
+      <!-- TAB: SYNC -->
+      <div id="admin-panel-sync">
+        <div class="card" style="margin-bottom:16px">
+          <h3 style="font-size:16px;margin-bottom:12px">☁️ Đồng bộ Dữ liệu Hệ thống</h3>
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:16px">
+            Sau khi thêm/sửa Flashcard, Chương, hay Bài nghe — nhấn nút này để lưu lên Supabase. 
+            Mọi học viên khi đăng nhập sẽ tự động tải về bản cập nhật mới nhất.
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="btn-sync-global" onclick="CloudSync.pushGlobalData()">☁️ Đẩy toàn bộ lên Supabase</button>
+            <button class="btn btn-secondary" onclick="CloudSync.pullGlobalData()">⬇️ Kéo dữ liệu từ Supabase về</button>
+            <button class="btn btn-secondary" onclick="showExportAllModal()">📤 Xuất file backup</button>
           </div>
-          <div id="admin-activity-log" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="font-size:16px">👥 Quản lý Users</h3>
+              <button class="btn btn-sm btn-secondary" onclick="Admin.loadUsers().then(()=>Admin.renderUserList())">🔄</button>
+            </div>
+            <div id="admin-user-list" style="max-height:300px;overflow-y:auto"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="font-size:16px">📊 Activity Log</h3>
+              <button class="btn btn-sm btn-secondary" onclick="Admin.renderActivityLog()">🔄</button>
+            </div>
+            <div id="admin-activity-log" style="max-height:300px;overflow-y:auto"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Quản lý Dữ Liệu -->
-      <div class="card" style="margin-top:24px">
-        <h3 style="margin-bottom:16px;font-size:16px">📚 Quản lý Dữ liệu Hệ thống</h3>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" id="btn-sync-global" onclick="Admin.syncGlobalData()">☁️ Đồng bộ toàn bộ Kiến Thức lên Supabase</button>
-          <button class="btn btn-secondary" onclick="navigate('library')">📚 Quản lý trong Library</button>
-          <button class="btn btn-secondary" onclick="showExportAllModal()">📤 Xuất tất cả</button>
+      <!-- TAB: CHAPTERS -->
+      <div id="admin-panel-chapters" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:16px">📚 Quản lý Chương & Bài học</h3>
+            <button class="btn btn-primary btn-sm" onclick="adminAddChapter()">+ Thêm Chương</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:12px">Kéo để sắp xếp lại thứ tự. Nhấn ✏️ để đổi tên. Nhấn ☁️ để lưu lên cloud sau khi chỉnh sửa xong.</p>
+          <div id="admin-chapter-list" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
-        <p style="margin-top:12px;font-size:13px;color:var(--text-3)">
-          Bạn có thể thêm Flashcard, tạo danh sách Bài Luyện Nghe, v.v ở các chức năng khác, sau đó nhấn "Đồng bộ" để lưu thành dữ liệu Global cho mọi User.
-        </p>
+      </div>
+
+      <!-- TAB: DICTATION -->
+      <div id="admin-panel-dictation" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:16px">🎧 Quản lý Playlist Nghe chép</h3>
+            <button class="btn btn-primary btn-sm" onclick="navigate('dictation')">+ Thêm Bài Nghe</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:12px">Thêm bài mới ở trang Nghe chép, sau đó quay lại đây để đồng bộ.</p>
+          <div id="admin-dictation-list" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- TAB: USERS -->
+      <div id="admin-panel-users" style="display:none">
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="font-size:16px">👥 Quản lý Users</h3>
+              <button class="btn btn-sm btn-secondary" onclick="Admin.loadUsers().then(()=>Admin.renderUserList())">🔄 Làm mới</button>
+            </div>
+            <div id="admin-user-list-full" style="max-height:500px;overflow-y:auto"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="font-size:16px">📊 Activity Log</h3>
+              <button class="btn btn-sm btn-secondary" onclick="Admin.renderActivityLog()">🔄 Làm mới</button>
+            </div>
+            <div id="admin-activity-log-full" style="max-height:500px;overflow-y:auto"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -909,27 +960,33 @@ Bài 15: Trang 36-37..."
     </div>
 
     <div class="dictation-layout">
-      <!-- LEFT COLUMN: Mini Flashcard -->
+      <!-- LEFT COLUMN: YouTube Search -->
       <div class="dictation-col-left">
         <div class="card dict-sticky-card">
           <div class="flex justify-between items-center mb-12">
             <label class="label mb-0 flex items-center gap-8">
-              <span>🃏 Ôn tập nhanh</span>
+              <span>🔍 Tìm video YouTube</span>
             </label>
           </div>
-          <p class="text-xs text-muted mb-16" style="line-height:1.5">Ôn qua từ vựng trong khi chờ tải video hoặc luyện
-            nghe.</p>
+          <p class="text-xs text-muted mb-16" style="line-height:1.5">Tìm kiếm video tiếng Trung để luyện ghi chép chính tả.</p>
 
-          <div id="dict-mini-fc"
-            style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-1);border-radius:12px;border:1px solid var(--border);padding:16px;text-align:center;cursor:pointer;position:relative;min-height:150px;"
-            onclick="flipMiniFlashcard()">
-            <div class="text-muted text-sm" id="dict-mini-fc-content">Tải thẻ...</div>
+          <!-- Search Input -->
+          <div class="flex gap-8 mb-12">
+            <input 
+              class="input" 
+              id="yt-search-input" 
+              placeholder="Tìm kiếm video..." 
+              style="flex:1;font-size:13px"
+              onkeypress="if(event.key==='Enter') searchYouTubeVideos()"
+            >
+            <button class="btn btn-primary btn-sm" onclick="searchYouTubeVideos()">🔍</button>
           </div>
 
-          <div class="flex justify-between mt-16 dict-mini-fc-nav">
-            <button class="btn btn-ghost btn-sm" onclick="navMiniFlashcard(-1)">← Lùi</button>
-            <span class="text-xs text-muted font-medium" id="dict-mini-fc-count" style="line-height: 32px;">0 / 0</span>
-            <button class="btn btn-ghost btn-sm" onclick="navMiniFlashcard(1)">Tiếp →</button>
+          <!-- Search Results -->
+          <div id="yt-search-results" style="flex:1;overflow-y:auto;max-height:500px">
+            <div class="text-sm text-muted text-center mt-24">
+              Nhập từ khóa và nhấn Enter để tìm kiếm
+            </div>
           </div>
         </div>
       </div>
@@ -1095,6 +1152,9 @@ Bài 15: Trang 36-37..."
   <!-- Load Supabase client FIRST -->
   <script src="js/db-connect.js?v=3"></script>
   
+  <!-- Cloud Sync Module -->
+  <script src="js/cloud-sync.js?v=1"></script>
+  
   <!-- Then load other files -->
   <script src="js/core.js?v=4"></script>
   <script src="js/auth.js?v=2"></script>
@@ -1211,6 +1271,100 @@ Bài 15: Trang 36-37..."
       closeModal('modal-ai-settings');
     }
     
+    // ===== YOUTUBE SEARCH FUNCTION =====
+    async function searchYouTubeVideos() {
+      const query = document.getElementById('yt-search-input').value.trim();
+      const resultsContainer = document.getElementById('yt-search-results');
+      
+      if (!query) {
+        toast('⚠️ Vui lòng nhập từ khóa tìm kiếm', 'error');
+        return;
+      }
+      
+      // Show loading
+      resultsContainer.innerHTML = `
+        <div class="text-center" style="padding:24px">
+          <div style="font-size:32px;margin-bottom:12px">⏳</div>
+          <div class="text-sm text-muted">Đang tìm kiếm...</div>
+        </div>
+      `;
+      
+      try {
+        // Use YouTube Data API v3
+        // Note: This requires a YouTube API key
+        const apiKey = 'AIzaSyBqWHwJz7VxqYQxH5kZqZqZqZqZqZqZqZq'; // Replace with actual API key
+        const maxResults = 10;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&key=${apiKey}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error.message);
+        }
+        
+        if (!data.items || data.items.length === 0) {
+          resultsContainer.innerHTML = `
+            <div class="text-center" style="padding:24px">
+              <div style="font-size:32px;margin-bottom:12px">😕</div>
+              <div class="text-sm text-muted">Không tìm thấy video nào</div>
+            </div>
+          `;
+          return;
+        }
+        
+        // Render results
+        let html = '<div style="display:flex;flex-direction:column;gap:12px">';
+        
+        data.items.forEach(item => {
+          const videoId = item.id.videoId;
+          const title = item.snippet.title;
+          const thumbnail = item.snippet.thumbnails.medium.url;
+          const channelTitle = item.snippet.channelTitle;
+          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          
+          html += `
+            <div class="yt-search-result" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all 0.2s" onclick="loadVideoFromSearch('${videoUrl}', '${title.replace(/'/g, "\\'")}')">
+              <img src="${thumbnail}" style="width:100%;aspect-ratio:16/9;object-fit:cover">
+              <div style="padding:12px">
+                <div style="font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${title}</div>
+                <div style="font-size:11px;color:var(--text-3)">${channelTitle}</div>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        resultsContainer.innerHTML = html;
+        
+      } catch (error) {
+        console.error('YouTube search error:', error);
+        
+        // Fallback: Show manual search option
+        resultsContainer.innerHTML = `
+          <div class="text-center" style="padding:24px">
+            <div style="font-size:32px;margin-bottom:12px">🔍</div>
+            <div class="text-sm text-muted mb-16">Tìm kiếm trực tiếp trên YouTube</div>
+            <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" target="_blank" class="btn btn-primary btn-sm">
+              Mở YouTube
+            </a>
+          </div>
+        `;
+      }
+    }
+    
+    function loadVideoFromSearch(videoUrl, title) {
+      // Load video into main player
+      document.getElementById('yt-url').value = videoUrl;
+      loadDictationVideo();
+      
+      // Show toast
+      toast(`✅ Đã tải: ${title}`, 'success');
+      
+      // Scroll to video player
+      document.getElementById('yt-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
     // ===== TIPS =====
     const TIPS = [
       'Học 20 từ mỗi ngày hiệu quả hơn học 100 từ một lúc.',
@@ -1247,6 +1401,158 @@ Bài 15: Trang 36-37..."
     // Close modal on overlay click
     document.querySelectorAll('.modal-overlay').forEach(m => {
       m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+    // ===== ADMIN TAB SWITCHING =====
+    function adminShowTab(tab) {
+      ['sync', 'chapters', 'dictation', 'users'].forEach(t => {
+        const panel = document.getElementById('admin-panel-' + t);
+        const btn = document.getElementById('admin-tab-' + t);
+        if (panel) panel.style.display = t === tab ? 'block' : 'none';
+        if (btn) {
+          btn.className = t === tab ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+        }
+      });
+      if (tab === 'chapters') adminRenderChapters();
+      if (tab === 'dictation') adminRenderDictation();
+      if (tab === 'users') {
+        Admin.loadUsers().then(() => Admin.renderUserList());
+        Admin.renderActivityLog();
+      }
+    }
+
+    // ===== ADMIN CHAPTERS MANAGEMENT =====
+    function adminRenderChapters() {
+      const list = document.getElementById('admin-chapter-list');
+      if (!list) return;
+      const chapters = [...State.chapters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      if (chapters.length === 0) {
+        list.innerHTML = '<p class="text-muted text-center">Chưa có chương nào. Nhấn "+ Thêm Chương" để bắt đầu.</p>';
+        return;
+      }
+      list.innerHTML = chapters.map((ch, idx) => `
+        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px;cursor:move" draggable="true"
+             ondragstart="adminDragStart(event, '${ch.id}')" ondragover="event.preventDefault()" ondrop="adminDrop(event, '${ch.id}')">
+          <span style="color:var(--text-3);font-size:18px">⠿</span>
+          <span style="width:28px;height:28px;border-radius:50%;background:var(--red-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${idx + 1}</span>
+          <div style="flex:1;min-width:0">
+            <div id="ch-name-display-${ch.id}" style="font-weight:600;font-size:14px">${ch.name || 'Chưa đặt tên'}</div>
+            <div style="font-size:12px;color:var(--text-3)">${(ch.vocab || []).length} từ vựng</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="adminRenameChapter('${ch.id}')" title="Đổi tên">✏️</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminDeleteChapter('${ch.id}')" title="Xóa">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    let _adminDragId = null;
+    function adminDragStart(e, id) { _adminDragId = id; }
+    function adminDrop(e, targetId) {
+      if (!_adminDragId || _adminDragId === targetId) return;
+      const fromIdx = State.chapters.findIndex(c => c.id === _adminDragId);
+      const toIdx = State.chapters.findIndex(c => c.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [moved] = State.chapters.splice(fromIdx, 1);
+      State.chapters.splice(toIdx, 0, moved);
+      State.chapters.forEach((c, i) => c.order = i);
+      State.save();
+      adminRenderChapters();
+      _adminDragId = null;
+    }
+
+    function adminRenameChapter(id) {
+      const ch = State.chapters.find(c => c.id === id);
+      if (!ch) return;
+      const newName = prompt('Đặt tên mới cho chương:', ch.name || '');
+      if (newName === null) return;
+      if (!newName.trim()) { toast('Tên chương không được để trống', 'error'); return; }
+      ch.name = newName.trim();
+      State.save();
+      adminRenderChapters();
+      toast('✅ Đã đổi tên chương', 'success');
+    }
+
+    function adminDeleteChapter(id) {
+      const ch = State.chapters.find(c => c.id === id);
+      if (!ch) return;
+      if (!confirm(`Xóa chương "${ch.name}"? Toàn bộ từ vựng trong chương sẽ bị xóa!`)) return;
+      State.chapters = State.chapters.filter(c => c.id !== id);
+      State.cards = State.cards.filter(c => c.chapterId !== id);
+      State.save();
+      adminRenderChapters();
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('🗑️ Đã xóa chương', 'info');
+    }
+
+    function adminAddChapter() {
+      const name = prompt('Tên chương mới:');
+      if (!name || !name.trim()) return;
+      const newChapter = {
+        id: 'ch_' + Date.now(),
+        name: name.trim(),
+        bookName: '',
+        pageRange: '',
+        order: State.chapters.length,
+        vocab: []
+      };
+      State.chapters.push(newChapter);
+      State.save();
+      adminRenderChapters();
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('✅ Đã thêm chương "' + newChapter.name + '"', 'success');
+    }
+
+    // ===== ADMIN DICTATION MANAGEMENT =====
+    function adminRenderDictation() {
+      const list = document.getElementById('admin-dictation-list');
+      if (!list) return;
+      const playlist = State.dictationPlaylist || [];
+      if (playlist.length === 0) {
+        list.innerHTML = '<p class="text-muted text-center">Chưa có bài nghe nào. Vào trang Nghe chép để thêm.</p>';
+        return;
+      }
+      list.innerHTML = playlist.map(p => `
+        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px">
+          <img src="https://img.youtube.com/vi/${p.videoId}/mqdefault.jpg" style="width:100px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title || 'Chưa đặt tên'}</div>
+            <div style="font-size:12px;color:var(--text-3)">${p.totalCount || 0} câu · ${p.transcript ? p.transcript.length + ' ký tự transcript' : 'Chưa có transcript'}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="adminRenameDictation(${p.id})" title="Đổi tên">✏️</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminDeleteDictation(${p.id})" title="Xóa">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function adminRenameDictation(id) {
+      const p = State.dictationPlaylist.find(x => x.id === id);
+      if (!p) return;
+      const newName = prompt('Tên mới cho bài nghe:', p.title || '');
+      if (newName === null) return;
+      if (!newName.trim()) { toast('Tên không được để trống', 'error'); return; }
+      p.title = newName.trim();
+      State.save();
+      adminRenderDictation();
+      toast('✅ Đã đổi tên bài nghe', 'success');
+    }
+
+    function adminDeleteDictation(id) {
+      if (!confirm('Xóa bài nghe này khỏi danh sách?')) return;
+      State.dictationPlaylist = State.dictationPlaylist.filter(x => x.id !== id);
+      State.save();
+      adminRenderDictation();
+      if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
+      toast('🗑️ Đã xóa bài nghe', 'info');
+    }
+
+    // Tự động tải dữ liệu cloud khi đăng nhập xong
+    document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('auth:loggedin', () => {
+        CloudSync.pullGlobalData(true);
+      });
     });
   </script>
 </body>

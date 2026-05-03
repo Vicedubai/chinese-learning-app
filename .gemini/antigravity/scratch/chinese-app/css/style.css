@@ -716,3 +716,18 @@ body {
   font-size: 12px;
   color: var(--text-3);
 }
+
+/* ===== YOUTUBE SEARCH RESULTS ===== */
+.yt-search-result {
+  transition: all 0.2s ease;
+}
+
+.yt-search-result:hover {
+  border-color: var(--red-light) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.yt-search-result:active {
+  transform: translateY(0);
+}
