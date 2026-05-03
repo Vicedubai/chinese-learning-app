@@ -1,0 +1,23 @@
+{
+  "buildCommand": "pip install -r requirements.txt",
+  "outputDirectory": ".",
+  "framework": "other",
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "functions": {
+    "ocr_server.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/ocr_server.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
