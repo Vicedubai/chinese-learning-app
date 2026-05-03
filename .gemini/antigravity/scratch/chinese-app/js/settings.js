@@ -5,6 +5,7 @@ const Settings = {
   init() {
     this.loadSettings();
     this.updateUI();
+    this.initThemeSelect();
   },
 
   // Load settings từ localStorage hoặc Supabase
@@ -20,7 +21,7 @@ const Settings = {
 
   // Load từ Supabase
   async loadFromSupabase() {
-    const client = DBClient.getClient();
+    const client = SupabaseClient.getClient();
     if (!client) return;
 
     try {
@@ -35,6 +36,9 @@ const Settings = {
       if (data) {
         // Apply settings
         if (data.theme) this.applyTheme(data.theme);
+        if (data.gemini_api_key) {
+          localStorage.setItem('gemini_api_key', data.gemini_api_key);
+        }
         if (data.settings) {
           // Apply other settings
         }
@@ -61,7 +65,7 @@ const Settings = {
 
   // Save to Supabase
   async saveToSupabase(settings) {
-    const client = DBClient.getClient();
+    const client = SupabaseClient.getClient();
     if (!client) return;
 
     try {
@@ -99,8 +103,43 @@ const Settings = {
 
   // Apply theme
   applyTheme(theme) {
+    console.log('Applying theme:', theme);
+    
+    // Apply to document
     document.documentElement.setAttribute('data-theme', theme);
+    
+    // Save to localStorage
     localStorage.setItem('theme', theme);
+    
+    // Update select dropdown
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+      themeSelect.value = theme;
+    }
+    
+    // Save to Supabase if logged in
+    if (Auth.currentUser) {
+      this.saveSettings({ theme });
+    }
+    
+    // Show toast
+    if (typeof toast === 'function') {
+      const themeName = theme === 'dark' ? '🌙 Dark' : '☀️ Light';
+      toast(`✅ Đã chuyển sang theme ${themeName}`, 'success');
+    }
+  },
+
+  // Initialize theme select
+  initThemeSelect() {
+    const themeSelect = document.getElementById('theme-select');
+    if (!themeSelect) return;
+    
+    // Set current theme
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    themeSelect.value = currentTheme;
+    
+    // Apply current theme
+    document.documentElement.setAttribute('data-theme', currentTheme);
   },
 
   // Update UI

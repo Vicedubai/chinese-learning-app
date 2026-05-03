@@ -1178,6 +1178,39 @@ Bài 15: Trang 36-37..."
       }
     }
     
+    // ===== AI SETTINGS FUNCTIONS =====
+    function openAISettings() {
+      // Load current API key
+      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const apiKeyInput = document.getElementById('gemini-api-key');
+      if (apiKeyInput) {
+        apiKeyInput.value = apiKey;
+      }
+      
+      // Open modal
+      openModal('modal-ai-settings');
+    }
+    
+    async function saveAISettings() {
+      const apiKey = document.getElementById('gemini-api-key').value.trim();
+      
+      if (!apiKey) {
+        toast('⚠️ Vui lòng nhập API Key', 'error');
+        return;
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('gemini_api_key', apiKey);
+      
+      // Save to Supabase if logged in
+      if (Auth && Auth.currentUser) {
+        await Settings.saveSettings({ gemini_api_key: apiKey });
+      }
+      
+      toast('✅ Đã lưu API Key', 'success');
+      closeModal('modal-ai-settings');
+    }
+    
     // ===== TIPS =====
     const TIPS = [
       'Học 20 từ mỗi ngày hiệu quả hơn học 100 từ một lúc.',
