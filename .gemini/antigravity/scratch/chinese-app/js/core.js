@@ -4,7 +4,7 @@ window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-produ
 // ===== STORAGE =====
 const DB = {
   get: (key, def = null) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } },
-  set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
+  set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch { } },
   merge: (key, patch) => { DB.set(key, { ...DB.get(key, {}), ...patch }); }
 };
 
@@ -34,7 +34,7 @@ const State = {
   cards: DB.get('cards', []),
   dictationPlaylist: DB.get('dictationPlaylist', []),
   progress: DB.get('progress', { xp: 0, streak: 0, lastStudy: null, results: [] }),
-  session: DB.get('session', { 
+  session: DB.get('session', {
     currentTask: null,
     flashcardIndex: 0,
     flashcardQueue: [],
@@ -59,7 +59,7 @@ const State = {
     DB.set('session', this.session);
   },
   clearSession() {
-    this.session = { 
+    this.session = {
       currentTask: null,
       flashcardIndex: 0,
       flashcardQueue: [],
@@ -142,7 +142,7 @@ function navigate(page) {
   const nav = document.querySelector(`[data-page="${page}"]`);
   if (nav) nav.classList.add('active');
   currentPage = page;
-  
+
   // Restore session if available
   const session = State.session;
   if (session.currentTask === 'flashcard' && page === 'flashcards' && session.flashcardQueue.length > 0) {
@@ -164,13 +164,13 @@ function navigate(page) {
     showCard();
     toast('📚 Tiếp tục phiên học trước đó', 'info', '🔄');
   } else if (session.currentTask === 'exercise' && page === 'mini-tests' && session.exerciseQueue.length > 0) {
-    exState = { 
-      type: session.exerciseType, 
-      idx: session.exerciseIndex, 
-      score: session.exerciseScore, 
-      total: session.exerciseTotal, 
-      pool: session.exerciseQueue, 
-      answered: false 
+    exState = {
+      type: session.exerciseType,
+      idx: session.exerciseIndex,
+      score: session.exerciseScore,
+      total: session.exerciseTotal,
+      pool: session.exerciseQueue,
+      answered: false
     };
     document.getElementById('ex-type-select').style.display = 'none';
     document.getElementById('ex-session').style.display = 'block';
@@ -226,26 +226,26 @@ function initMobileMenu() {
     menuBtn.innerHTML = '☰';
     menuBtn.style.display = window.innerWidth <= 600 ? 'flex' : 'none';
     document.body.appendChild(menuBtn);
-    
+
     // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'mobile-overlay';
     document.body.appendChild(overlay);
-    
+
     // Toggle sidebar
     menuBtn.addEventListener('click', () => {
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('mobile-open');
       overlay.classList.toggle('active');
     });
-    
+
     // Close on overlay click
     overlay.addEventListener('click', () => {
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.remove('mobile-open');
       overlay.classList.remove('active');
     });
-    
+
     // Close sidebar when nav item clicked on mobile
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', () => {
@@ -256,7 +256,7 @@ function initMobileMenu() {
         }
       });
     });
-    
+
     // Handle window resize
     window.addEventListener('resize', () => {
       menuBtn.style.display = window.innerWidth <= 600 ? 'flex' : 'none';
