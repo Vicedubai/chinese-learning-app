@@ -14,11 +14,14 @@ const CloudSync = {
     if (btn) { btn.innerText = '⏳ Đang đồng bộ...'; btn.disabled = true; }
 
     try {
+      // Helper: đảm bảo giá trị luôn là array
+      const safeArr = v => Array.isArray(v) ? v : (v ? Object.values(v) : []);
+
       // Chuẩn hoá chapters: dùng ch.title (field chuẩn của library.js)
       const chapters = State.chapters.map(ch => ({
         id: ch.id,
-        title: ch.title || ch.name || 'Chưa đặt tên',   // library dùng .title
-        name: ch.title || ch.name || 'Chưa đặt tên',    // giữ .name để tương thích
+        title: ch.title || ch.name || 'Chưa đặt tên',
+        name: ch.title || ch.name || 'Chưa đặt tên',
         bookId: ch.bookId || null,
         bookName: ch.bookName || '',
         pageRange: ch.pageRange || '',
@@ -26,7 +29,7 @@ const CloudSync = {
         endPage: ch.endPage || 0,
         num: ch.num || 0,
         order: ch.order ?? 0,
-        vocab: (ch.vocab || []).map(v => ({
+        vocab: safeArr(ch.vocab).map(v => ({
           id: v.id,
           chinese: v.chinese || '',
           pinyin: v.pinyin || '',
@@ -102,12 +105,21 @@ const CloudSync = {
         return false;
       }
 
+      const safeArr = v => Array.isArray(v) ? v : (v ? Object.values(v) : []);
       const { chapters = [], cards = [], dictationPlaylist = [] } = data.vocab;
 
+      // Đảm bảo vocab của mỗi chapter là array
+      const cleanChapters = safeArr(chapters).map(ch => ({
+        ...ch,
+        vocab: safeArr(ch.vocab)
+      }));
+      const cleanCards = safeArr(cards);
+      const cleanPlaylist = safeArr(dictationPlaylist);
+
       // Cập nhật State
-      if (chapters.length > 0) State.chapters = chapters;
-      if (cards.length > 0) State.cards = cards;
-      if (dictationPlaylist.length > 0) State.dictationPlaylist = dictationPlaylist;
+      if (cleanChapters.length > 0) State.chapters = cleanChapters;
+      if (cleanCards.length > 0) State.cards = cleanCards;
+      if (cleanPlaylist.length > 0) State.dictationPlaylist = cleanPlaylist;
 
       State.save();
 
