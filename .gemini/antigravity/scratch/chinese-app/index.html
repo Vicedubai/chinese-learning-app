@@ -95,6 +95,13 @@
       <button class="nav-item" data-page="chat" onclick="navigate('chat')">
         <span class="nav-icon">🤖</span><span>Trợ lý AI</span>
       </button>
+      <div class="nav-section-label">Khác</div>
+      <button class="nav-item" data-page="settings" onclick="navigate('settings')">
+        <span class="nav-icon">⚙️</span><span>Cài đặt</span>
+      </button>
+      <button class="nav-item" id="admin-panel-nav" data-page="admin" onclick="navigate('admin')" style="display:none">
+        <span class="nav-icon">🔐</span><span>Admin Panel</span>
+      </button>
     </div>
     <div class="sidebar-backup">
       <div class="flex justify-between items-center">
@@ -629,6 +636,107 @@ Bài 15: Trang 36-37..."
       </div>
     </div>
 
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <h2>⚙️ Cài đặt</h2>
+        <p>Quản lý tài khoản, đồng bộ và cấu hình ứng dụng</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- Tài khoản -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:16px">👤 Tài khoản</h3>
+          <div id="settings-account"></div>
+        </div>
+
+        <!-- Đồng bộ & Backup -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:16px">☁️ Đồng bộ & Backup</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-secondary w-full" onclick="exportBackup()">💾 Xuất file backup</button>
+            <button class="btn btn-secondary w-full" onclick="document.getElementById('backup-import-input').click()">📥 Nhập file backup</button>
+            <button class="btn btn-secondary w-full" onclick="checkStorageUsage()">📊 Kiểm tra bộ nhớ</button>
+          </div>
+          <div id="storage-info" style="margin-top:16px;padding:12px;background:var(--bg-2);border-radius:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:13px">Bộ nhớ đã dùng</span>
+              <span id="storage-text" style="font-size:13px;color:var(--text-3)">0 MB / 5 MB</span>
+            </div>
+            <div style="height:8px;background:var(--bg-3);border-radius:4px;overflow:hidden">
+              <div id="storage-bar" style="height:100%;background:var(--green);width:0%;transition:width 0.3s"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gemini AI -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:16px">🤖 Gemini AI</h3>
+          <button class="btn btn-secondary w-full" onclick="openAISettings()">🔑 Cấu hình API Key</button>
+          <p style="margin-top:12px;font-size:12px;color:var(--text-3)">
+            Gemini AI giúp sửa lỗi OCR, thêm pinyin và dịch nghĩa tự động
+          </p>
+        </div>
+
+        <!-- Giao diện -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:16px">🎨 Giao diện</h3>
+          <div style="margin-bottom:12px">
+            <label class="label">Theme</label>
+            <select class="input" id="theme-select" onchange="Settings.applyTheme(this.value)">
+              <option value="dark">🌙 Dark</option>
+              <option value="light">☀️ Light</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="page" id="page-admin">
+      <div class="page-header">
+        <h2>🔐 Admin Panel</h2>
+        <p>Quản lý users, chapters và xem thống kê</p>
+      </div>
+
+      <!-- Thống kê -->
+      <div id="admin-stats"></div>
+
+      <div class="grid-2">
+        <!-- Quản lý Users -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:16px">👥 Quản lý Users</h3>
+            <button class="btn btn-sm btn-secondary" onclick="Admin.loadUsers();Admin.renderUserList()">🔄 Làm mới</button>
+          </div>
+          <div id="admin-user-list" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:16px">📊 Activity Log</h3>
+            <button class="btn btn-sm btn-secondary" onclick="Admin.renderActivityLog()">🔄 Làm mới</button>
+          </div>
+          <div id="admin-activity-log" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- Quản lý Chapters -->
+      <div class="card" style="margin-top:24px">
+        <h3 style="margin-bottom:16px;font-size:16px">📚 Quản lý Chapters</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="Admin.syncChaptersToSupabase()">☁️ Đồng bộ Chapters lên Supabase</button>
+          <button class="btn btn-secondary" onclick="navigate('library')">📚 Quản lý trong Library</button>
+          <button class="btn btn-secondary" onclick="showExportAllModal()">📤 Xuất tất cả</button>
+        </div>
+        <p style="margin-top:12px;font-size:13px;color:var(--text-3)">
+          Hiện có <strong>${State.chapters.length}</strong> chapters trong localStorage. 
+          Click "Đồng bộ" để lưu lên Supabase.
+        </p>
+      </div>
+    </div>
+
   </main>
 
   <!-- MODALS -->
@@ -723,6 +831,17 @@ Bài 15: Trang 36-37..."
           <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-ai-settings')">Hủy</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ADMIN USER PROGRESS MODAL -->
+  <div class="modal-overlay" id="modal-admin-user-progress">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <span class="modal-title">👤 Tiến độ học của User</span>
+        <button class="modal-close" onclick="closeModal('modal-admin-user-progress')">✕</button>
+      </div>
+      <div id="admin-user-progress-body" style="padding:20px"></div>
     </div>
   </div>
 
@@ -996,6 +1115,8 @@ Bài 15: Trang 36-37..."
   <script src="js/core.js?v=3"></script>
   <script src="js/supabase-client.js?v=1"></script>
   <script src="js/auth.js?v=1"></script>
+  <script src="js/settings.js?v=1"></script>
+  <script src="js/admin.js?v=1"></script>
   <script src="js/library.js?v=6"></script>
   <script src="js/flashcards.js?v=11"></script>
   <script src="js/exercises.js?v=9"></script>

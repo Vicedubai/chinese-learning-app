@@ -65,6 +65,14 @@ const Auth = {
     if (typeof toast === 'function') {
       toast(`👋 Chào ${user.email}!`, 'success');
     }
+
+    // Khởi tạo Settings và Admin
+    if (typeof Settings !== 'undefined') {
+      Settings.init();
+    }
+    if (this.isAdmin && typeof Admin !== 'undefined') {
+      Admin.init();
+    }
   },
 
   // Tạo user record mới
