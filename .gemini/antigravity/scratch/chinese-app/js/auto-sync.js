@@ -259,9 +259,14 @@ const AutoSync = {
 
 // Khởi động auto sync khi load trang
 document.addEventListener('DOMContentLoaded', () => {
-  // Kiểm tra xem có bật auto sync không
-  const autoSyncEnabled = localStorage.getItem('auto-sync-enabled') !== 'false';
-  if (autoSyncEnabled) {
+  // TẠM THỜI TẮT AUTO-SYNC vì Railway có vấn đề
+  // Dữ liệu sẽ được lưu trong localStorage của trình duyệt
+  const autoSyncEnabled = false; // Đổi thành true khi Railway hoạt động
+  
+  if (autoSyncEnabled && localStorage.getItem('auto-sync-enabled') !== 'false') {
     AutoSync.start();
+  } else {
+    AutoSync.updateSyncStatus('disabled');
+    console.log('ℹ️ Auto-sync disabled. Data saved in browser localStorage.');
   }
 });

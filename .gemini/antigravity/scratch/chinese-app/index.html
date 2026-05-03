@@ -53,14 +53,14 @@
   </div>
   <div class="sidebar-backup">
     <div class="flex justify-between items-center">
-      <span id="auto-sync-status" class="text-xs"><span style="color:var(--text-3)">⚪ Tự động đồng bộ</span></span>
-      <button class="btn btn-sm" style="padding:3px 8px;font-size:11px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border)" onclick="AutoSync.toggle()">🔄</button>
+      <span id="auto-sync-status" class="text-xs"><span style="color:var(--text-3)">💾 Lưu trên máy</span></span>
+      <button class="btn btn-sm" style="padding:3px 8px;font-size:11px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border)" onclick="openBackupSettings()">⚙️</button>
     </div>
     <div class="flex gap-6">
-      <button class="btn btn-sm" style="flex:1;font-size:11px;background:rgba(39,174,96,0.15);color:var(--green-light);border:1px solid rgba(39,174,96,0.3)" onclick="AutoSync.syncToServer()">☁️ Đồng bộ ngay</button>
-      <button class="btn btn-sm" style="flex:1;font-size:11px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border)" onclick="AutoSync.loadFromServer()">⬇️ Tải về</button>
+      <button class="btn btn-sm" style="flex:1;font-size:11px;background:rgba(39,174,96,0.15);color:var(--green-light);border:1px solid rgba(39,174,96,0.3)" onclick="exportBackup()">💾 Xuất file</button>
+      <button class="btn btn-sm" style="flex:1;font-size:11px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border)" onclick="document.getElementById('backup-import-input').click()">📥 Nhập file</button>
     </div>
-    <button class="btn btn-sm w-full" style="font-size:11px;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border)" onclick="exportBackup()">💾 Xuất file backup</button>
+    <button class="btn btn-sm w-full" style="font-size:11px;background:rgba(52,152,219,0.15);color:var(--blue);border:1px solid rgba(52,152,219,0.3)" onclick="checkStorageUsage()">📊 Kiểm tra bộ nhớ</button>
   </div>
   <div class="sidebar-footer">
     <button class="nav-item" style="width:100%;padding:8px 12px;font-size:13px;margin-bottom:12px" onclick="openAISettings()">
