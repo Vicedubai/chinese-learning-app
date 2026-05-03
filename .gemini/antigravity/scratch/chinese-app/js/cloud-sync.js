@@ -14,12 +14,17 @@ const CloudSync = {
     if (btn) { btn.innerText = '⏳ Đang đồng bộ...'; btn.disabled = true; }
 
     try {
-      // Chuẩn hoá chapters: chỉ lấy các trường cần thiết
+      // Chuẩn hoá chapters: dùng ch.title (field chuẩn của library.js)
       const chapters = State.chapters.map(ch => ({
         id: ch.id,
-        name: ch.name || 'Chưa đặt tên',
+        title: ch.title || ch.name || 'Chưa đặt tên',   // library dùng .title
+        name: ch.title || ch.name || 'Chưa đặt tên',    // giữ .name để tương thích
+        bookId: ch.bookId || null,
         bookName: ch.bookName || '',
         pageRange: ch.pageRange || '',
+        startPage: ch.startPage || 0,
+        endPage: ch.endPage || 0,
+        num: ch.num || 0,
         order: ch.order ?? 0,
         vocab: (ch.vocab || []).map(v => ({
           id: v.id,
