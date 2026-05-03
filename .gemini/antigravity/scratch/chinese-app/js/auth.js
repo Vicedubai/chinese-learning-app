@@ -191,6 +191,9 @@ const Auth = {
     if (!client) return;
 
     try {
+      // Ép giao diện phản hồi ngay lập tức để user không phải chờ
+      this.handleUserLogout();
+      
       const { error } = await client.auth.signOut();
       if (error) throw error;
     } catch (error) {
