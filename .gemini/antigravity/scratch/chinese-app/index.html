@@ -749,8 +749,11 @@ Bài 15: Trang 36-37..."
       <div id="admin-panel-chapters" style="display:none">
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h3 style="font-size:16px">📚 Quản lý Chương & Bài học</h3>
-            <button class="btn btn-primary btn-sm" onclick="adminAddChapter()">+ Thêm Chương</button>
+            <h3 style="font-size:16px">📚 Quản lý Sách & Bài học</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary btn-sm" onclick="adminAddBook()">📕 + Thêm Sách</button>
+              <button class="btn btn-primary btn-sm" onclick="adminAddChapter()">📝 + Thêm Bài</button>
+            </div>
           </div>
           <p style="font-size:12px;color:var(--text-3);margin-bottom:12px">Kéo để sắp xếp lại thứ tự. Nhấn ✏️ để đổi tên. Nhấn ☁️ để lưu lên cloud sau khi chỉnh sửa xong.</p>
           <div id="admin-chapter-list" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -1271,7 +1274,7 @@ Bài 15: Trang 36-37..."
       closeModal('modal-ai-settings');
     }
     
-    // ===== YOUTUBE SEARCH FUNCTION (IMPROVED - NO API KEY NEEDED) =====
+    // ===== YOUTUBE SEARCH WITH API =====
     async function searchYouTubeVideos() {
       const query = document.getElementById('yt-search-input').value.trim();
       const resultsContainer = document.getElementById('yt-search-results');
@@ -1290,181 +1293,220 @@ Bài 15: Trang 36-37..."
       `;
       
       try {
-        // Use Invidious API (free, no API key needed)
-        const invidiousInstances = [
-          'https://invidious.snopyta.org',
-          'https://yewtu.be',
-          'https://invidious.kavin.rocks'
-        ];
+        // Get API key from localStorage (user can set it in settings)
+        let apiKey = localStorage.getItem('youtube-api-key');
         
-        let data = null;
-        let lastError = null;
-        
-        // Try multiple instances
-        for (const instance of invidiousInstances) {
-          try {
-            const url = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`;
-            const response = await fetch(url);
-            
-            if (response.ok) {
-              data = await response.json();
-              break;
-            }
-          } catch (e) {
-            lastError = e;
-            console.log(`Failed to fetch from ${instance}:`, e);
-          }
-        }
-        
-        if (!data || data.length === 0) {
-          // Fallback: Show embedded YouTube search results
+        // If no API key, show setup instructions
+        if (!apiKey) {
           resultsContainer.innerHTML = `
-            <div style="display:flex;flex-direction:column;gap:12px">
-              <div class="text-sm text-muted text-center mb-8">
-                Hiển thị kết quả tìm kiếm từ YouTube
+            <div style="padding:24px;text-align:center">
+              <div style="font-size:48px;margin-bottom:16px">🔑</div>
+              <h3 style="margin-bottom:12px">Cần YouTube API Key</h3>
+              <p class="text-sm text-muted mb-16" style="line-height:1.6">
+                Để tìm kiếm video YouTube, bạn cần API Key miễn phí từ Google Cloud Console.
+                <br>Giới hạn: 10,000 requests/ngày (đủ dùng).
+              </p>
+              
+              <div style="background:var(--bg-3);padding:16px;border-radius:8px;margin-bottom:16px;text-align:left">
+                <div style="font-weight:600;margin-bottom:8px">📝 Hướng dẫn lấy API Key:</div>
+                <ol style="font-size:13px;line-height:1.8;padding-left:20px;color:var(--text-2)">
+                  <li>Vào <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">Google Cloud Console</a></li>
+                  <li>Tạo project mới hoặc chọn project có sẵn</li>
+                  <li>Vào "APIs & Services" → "Library"</li>
+                  <li>Tìm "YouTube Data API v3" → Click "Enable"</li>
+                  <li>Vào "Credentials" → "Create Credentials" → "API Key"</li>
+                  <li>Copy API Key và paste vào ô bên dưới</li>
+                </ol>
               </div>
-              ${generateYouTubeSearchEmbeds(query, 5)}
+              
+              <div style="display:flex;gap:8px;max-width:400px;margin:0 auto">
+                <input 
+                  type="text" 
+                  id="yt-api-key-input" 
+                  class="input" 
+                  placeholder="Paste API Key vào đây..."
+                  style="flex:1;font-size:13px"
+                >
+                <button class="btn btn-primary btn-sm" onclick="saveYouTubeAPIKey()">💾 Lưu</button>
+              </div>
+              
+              <div style="margin-top:16px">
+                <button 
+                  class="btn btn-ghost btn-sm" 
+                  onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' chinese learning')}', '_blank')"
+                >
+                  🔍 Hoặc tìm trực tiếp trên YouTube
+                </button>
+              </div>
             </div>
           `;
           return;
         }
         
-        // Render results with embedded videos
+        // Search with YouTube Data API v3
+        const searchQuery = query + ' chinese learning';
+        const maxResults = 12;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&maxResults=${maxResults}&key=${apiKey}&relevanceLanguage=zh`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Check for API errors
+        if (data.error) {
+          if (data.error.code === 403) {
+            resultsContainer.innerHTML = `
+              <div style="padding:24px;text-align:center">
+                <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+                <h3 style="margin-bottom:12px;color:var(--red-light)">API Key không hợp lệ</h3>
+                <p class="text-sm text-muted mb-16">
+                  ${data.error.message}
+                </p>
+                <button class="btn btn-primary btn-sm" onclick="localStorage.removeItem('youtube-api-key');searchYouTubeVideos()">
+                  🔑 Nhập lại API Key
+                </button>
+              </div>
+            `;
+          } else {
+            throw new Error(data.error.message);
+          }
+          return;
+        }
+        
+        if (!data.items || data.items.length === 0) {
+          resultsContainer.innerHTML = `
+            <div class="text-center" style="padding:24px">
+              <div style="font-size:32px;margin-bottom:12px">😕</div>
+              <div class="text-sm text-muted mb-16">Không tìm thấy video nào</div>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}', '_blank')"
+              >
+                🔍 Tìm trên YouTube
+              </button>
+            </div>
+          `;
+          return;
+        }
+        
+        // Render results
         let html = '<div style="display:flex;flex-direction:column;gap:16px">';
         
-        data.slice(0, 8).forEach((item, index) => {
-          const videoId = item.videoId;
-          const title = item.title;
-          const author = item.author;
-          const lengthSeconds = item.lengthSeconds;
-          const viewCount = item.viewCount;
-          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-          
-          // Format duration
-          const duration = formatDuration(lengthSeconds);
-          
-          // Format view count
-          const views = formatViewCount(viewCount);
+        data.items.forEach((item) => {
+          const videoId = item.id.videoId;
+          const title = item.snippet.title;
+          const channel = item.snippet.channelTitle;
+          const thumbnail = item.snippet.thumbnails.medium.url;
+          const description = item.snippet.description;
+          const publishedAt = new Date(item.snippet.publishedAt).toLocaleDateString('vi-VN');
           
           html += `
             <div class="yt-search-result" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-2);transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
-              <!-- Embedded Video -->
-              <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000">
-                <iframe 
-                  src="https://www.youtube.com/embed/${videoId}" 
-                  style="width:100%;height:100%;border:none"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowfullscreen
-                  loading="lazy"
-                ></iframe>
+              <!-- Thumbnail with Play Button -->
+              <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;cursor:pointer" onclick="expandVideo(this, '${videoId}')">
+                <img 
+                  src="${thumbnail}" 
+                  style="width:100%;height:100%;object-fit:cover"
+                  alt="${title}"
+                >
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:rgba(255,0,0,0.8);border-radius:12px;display:flex;align-items:center;justify-content:center;transition:all 0.2s">
+                  <div style="width:0;height:0;border-left:20px solid white;border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:4px"></div>
+                </div>
               </div>
               
               <!-- Video Info -->
               <div style="padding:12px">
                 <div style="font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text-1)">${title}</div>
-                <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">${author}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-3)">
-                  <span>⏱️ ${duration}</span>
-                  <span>👁️ ${views}</span>
-                </div>
+                <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">${channel}</div>
+                <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">${description}</div>
+                <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">📅 ${publishedAt}</div>
                 
-                <!-- Action Button -->
-                <button 
-                  class="btn btn-primary btn-sm w-full mt-12" 
-                  onclick="loadVideoFromSearch('${videoUrl}', '${title.replace(/'/g, "\\'")}', '${videoId}')"
-                  style="font-size:12px;padding:8px"
-                >
-                  ✅ Chọn video này để luyện
-                </button>
+                <!-- Action Buttons -->
+                <div style="display:flex;gap:8px">
+                  <button 
+                    class="btn btn-primary btn-sm" 
+                    onclick="loadVideoFromSearch('https://www.youtube.com/watch?v=${videoId}', '${title.replace(/'/g, "\\'")}', '${videoId}')"
+                    style="flex:1;font-size:12px;padding:8px"
+                  >
+                    ✅ Chọn video
+                  </button>
+                  <button 
+                    class="btn btn-ghost btn-sm" 
+                    onclick="window.open('https://www.youtube.com/watch?v=${videoId}', '_blank')"
+                    style="font-size:12px;padding:8px"
+                  >
+                    🔗
+                  </button>
+                </div>
               </div>
             </div>
           `;
         });
         
         html += '</div>';
-        resultsContainer.innerHTML = html;
         
-        toast(`✅ Tìm thấy ${data.length} video`, 'success');
+        // Add "Search on YouTube" button at the end
+        html += `
+          <div style="text-align:center;margin-top:16px;padding:16px;border:1px dashed var(--border);border-radius:8px">
+            <div class="text-sm text-muted mb-12">Tìm thấy ${data.items.length} video</div>
+            <button 
+              class="btn btn-secondary btn-sm" 
+              onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}', '_blank')"
+              style="font-size:12px"
+            >
+              🔍 Xem thêm trên YouTube
+            </button>
+          </div>
+        `;
+        
+        resultsContainer.innerHTML = html;
+        toast(`✅ Tìm thấy ${data.items.length} video`, 'success');
         
       } catch (error) {
         console.error('YouTube search error:', error);
-        
-        // Fallback: Show embedded YouTube search results
         resultsContainer.innerHTML = `
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div class="text-center" style="padding:12px">
-              <div style="font-size:24px;margin-bottom:8px">🔍</div>
-              <div class="text-sm text-muted mb-12">Hiển thị kết quả từ YouTube</div>
-            </div>
-            ${generateYouTubeSearchEmbeds(query, 5)}
+          <div class="text-center" style="padding:24px">
+            <div style="font-size:32px;margin-bottom:12px">❌</div>
+            <div class="text-sm text-muted mb-8">Lỗi: ${error.message}</div>
+            <button 
+              class="btn btn-secondary btn-sm" 
+              onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' chinese learning')}', '_blank')"
+            >
+              🔍 Tìm trên YouTube
+            </button>
           </div>
         `;
       }
     }
     
-    // Generate embedded YouTube search results (fallback method)
-    function generateYouTubeSearchEmbeds(query, count) {
-      let html = '';
-      
-      // Common Chinese learning channels
-      const channels = [
-        'UC2fAiRQHRQT9aj9P_ijYeow', // Learn Chinese with ChineseFor.Us
-        'UCgTJfJKqP0FlRFbTmqCHPKQ', // Mandarin Corner
-        'UCrmeBlRFDiGqgmhFChb-0QA', // ChinesePod
-        'UC2fAiRQHRQT9aj9P_ijYeow', // Yoyo Chinese
-        'UCgTJfJKqP0FlRFbTmqCHPKQ'  // Everyday Chinese
-      ];
-      
-      for (let i = 0; i < count; i++) {
-        const searchQuery = `${query} chinese learning`;
-        const embedUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(searchQuery)}`;
-        
-        html += `
-          <div class="yt-search-result" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-2);margin-bottom:12px">
-            <div style="position:relative;width:100%;aspect-ratio:16/9;background:#000">
-              <iframe 
-                src="${embedUrl}" 
-                style="width:100%;height:100%;border:none"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen
-                loading="lazy"
-              ></iframe>
-            </div>
-            <div style="padding:12px;text-align:center">
-              <div class="text-sm text-muted">Nhấn play để xem video, sau đó click "Chọn video" bên dưới</div>
-              <button 
-                class="btn btn-secondary btn-sm w-full mt-8" 
-                onclick="openYouTubeSearchPage('${searchQuery}')"
-                style="font-size:12px"
-              >
-                🔍 Mở trang tìm kiếm YouTube
-              </button>
-            </div>
-          </div>
-        `;
+    // Save YouTube API Key
+    function saveYouTubeAPIKey() {
+      const apiKey = document.getElementById('yt-api-key-input').value.trim();
+      if (!apiKey) {
+        toast('⚠️ Vui lòng nhập API Key', 'error');
+        return;
       }
       
-      return html;
+      localStorage.setItem('youtube-api-key', apiKey);
+      toast('✅ Đã lưu API Key', 'success');
+      
+      // Re-run search
+      searchYouTubeVideos();
+    }
+    
+    // Expand video to show iframe
+    function expandVideo(element, videoId) {
+      element.innerHTML = `
+        <iframe 
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
+          style="width:100%;height:100%;border:none"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen
+        ></iframe>
+      `;
     }
     
     function openYouTubeSearchPage(query) {
       window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
-    }
-    
-    // Format duration from seconds to MM:SS
-    function formatDuration(seconds) {
-      if (!seconds) return '0:00';
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-    
-    // Format view count
-    function formatViewCount(count) {
-      if (!count) return '0';
-      if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
-      if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-      return count.toString();
     }
     
     function loadVideoFromSearch(videoUrl, title, videoId) {
@@ -1554,26 +1596,66 @@ Bài 15: Trang 36-37..."
     function adminRenderChapters() {
       const list = document.getElementById('admin-chapter-list');
       if (!list) return;
-      const chapters = [...State.chapters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      if (chapters.length === 0) {
-        list.innerHTML = '<p class="text-muted text-center">Chưa có chương nào. Nhấn "+ Thêm Chương" để bắt đầu.</p>';
+
+      if (State.chapters.length === 0 && State.books.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:24px">Chưa có nội dung nào. Import PDF hoặc nhấn "+ Thêm Bài" để bắt đầu.</p>';
         return;
       }
-      list.innerHTML = chapters.map((ch, idx) => `
-        <div class="card" style="padding:12px;display:flex;align-items:center;gap:12px;cursor:move" draggable="true"
+
+      let html = '';
+
+      // ── Nhóm các bài chưa có sách ──
+      const orphan = State.chapters.filter(ch => !ch.bookId || ch.bookId === 'manual');
+      if (orphan.length > 0) {
+        html += `<div style="margin-bottom:16px">
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">📂 Chưa phân loại (${orphan.length} bài)</div>
+          ${orphan.map((ch, idx) => adminChapterRow(ch, idx)).join('')}
+        </div>`;
+      }
+
+      // ── Nhóm theo từng Sách ──
+      State.books.forEach(book => {
+        const bookChapters = State.chapters
+          .filter(ch => ch.bookId === book.id)
+          .sort((a, b) => (a.num || 0) - (b.num || 0));
+
+        html += `
+        <div style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="background:rgba(240,180,41,0.08);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📕</span>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--gold)">${book.title}</div>
+              <div style="font-size:12px;color:var(--text-3)">${bookChapters.length} bài · ${State.cards.filter(c => bookChapters.find(ch => ch.id === c.chapterId)).length} từ vựng</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="adminRenameBook('${book.id}')" title="Đổi tên sách">✏️</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminDeleteBook('${book.id}')" title="Xóa sách">🗑️</button>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-1)">
+            ${bookChapters.length === 0 ? '<p style="font-size:12px;color:var(--text-3);text-align:center;padding:8px">Chưa có bài nào trong sách này</p>' : ''}
+            ${bookChapters.map((ch, idx) => adminChapterRow(ch, idx)).join('')}
+          </div>
+        </div>`;
+      });
+
+      list.innerHTML = html;
+    }
+
+    function adminChapterRow(ch, idx) {
+      const cardCount = State.cards.filter(c => c.chapterId === ch.id).length;
+      return `
+        <div class="card" style="padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:move" draggable="true"
              ondragstart="adminDragStart(event, '${ch.id}')" ondragover="event.preventDefault()" ondrop="adminDrop(event, '${ch.id}')">
-          <span style="color:var(--text-3);font-size:18px">⠿</span>
-          <span style="width:28px;height:28px;border-radius:50%;background:var(--red-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${idx + 1}</span>
+          <span style="color:var(--text-3);font-size:16px">⠿</span>
+          <span style="min-width:24px;height:24px;border-radius:50%;background:var(--red-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${ch.num || idx+1}</span>
           <div style="flex:1;min-width:0">
-            <div id="ch-name-display-${ch.id}" style="font-weight:600;font-size:14px">${ch.title || ch.name || 'Chưa đặt tên'}</div>
-            <div style="font-size:12px;color:var(--text-3)">${(ch.vocab || []).length} từ vựng</div>
+            <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ch.title || ch.name || '(Chưa đặt tên)'}</div>
+            <div style="font-size:11px;color:var(--text-3)">${cardCount} từ vựng</div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="adminRenameChapter('${ch.id}')" title="Đổi tên">✏️</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminDeleteChapter('${ch.id}')" title="Xóa">🗑️</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="adminRenameChapter('${ch.id}')" title="Đổi tên" style="padding:4px 6px">✏️</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);padding:4px 6px" onclick="adminDeleteChapter('${ch.id}')" title="Xóa">🗑️</button>
           </div>
-        </div>
-      `).join('');
+        </div>`;
     }
 
     let _adminDragId = null;
@@ -1591,41 +1673,77 @@ Bài 15: Trang 36-37..."
       _adminDragId = null;
     }
 
+    function adminRenameBook(id) {
+      const book = State.books.find(b => b.id === id);
+      if (!book) return;
+      const newName = prompt('Tên mới cho sách:', book.title || '');
+      if (newName === null) return;
+      if (!newName.trim()) { toast('Tên không được để trống', 'error'); return; }
+      book.title = newName.trim();
+      State.save();
+      adminRenderChapters();
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('✅ Đã đổi tên sách', 'success');
+    }
+
+    function adminDeleteBook(id) {
+      const book = State.books.find(b => b.id === id);
+      if (!book) return;
+      const chCount = State.chapters.filter(ch => ch.bookId === id).length;
+      if (!confirm(`Xóa sách "${book.title}"?\n\n${chCount} bài học sẽ chuyển về "Chưa phân loại" (từ vựng không bị mất).`)) return;
+      State.chapters.forEach(ch => { if (ch.bookId === id) ch.bookId = null; });
+      State.books = State.books.filter(b => b.id !== id);
+      State.save();
+      adminRenderChapters();
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('🗑️ Đã xóa sách', 'info');
+    }
+
     function adminRenameChapter(id) {
       const ch = State.chapters.find(c => c.id === id);
       if (!ch) return;
-      const newName = prompt('Đặt tên mới cho chương:', ch.title || ch.name || '');
+      const newName = prompt('Đặt tên mới cho bài:', ch.title || ch.name || '');
       if (newName === null) return;
-      if (!newName.trim()) { toast('Tên chương không được để trống', 'error'); return; }
+      if (!newName.trim()) { toast('Tên bài không được để trống', 'error'); return; }
       ch.title = newName.trim();
       ch.name = newName.trim();
       State.save();
       adminRenderChapters();
-      toast('✅ Đã đổi tên chương', 'success');
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('✅ Đã đổi tên bài', 'success');
     }
 
     function adminDeleteChapter(id) {
       const ch = State.chapters.find(c => c.id === id);
       if (!ch) return;
-      if (!confirm(`Xóa chương "${ch.name}"? Toàn bộ từ vựng trong chương sẽ bị xóa!`)) return;
+      const cardCount = State.cards.filter(c => c.chapterId === id).length;
+      if (!confirm(`Xóa bài "${ch.title || ch.name}"?\n${cardCount} từ vựng sẽ bị xóa theo!`)) return;
       State.chapters = State.chapters.filter(c => c.id !== id);
       State.cards = State.cards.filter(c => c.chapterId !== id);
       State.save();
       adminRenderChapters();
       if (typeof renderLibrary === 'function') renderLibrary();
-      toast('🗑️ Đã xóa chương', 'info');
+      toast('🗑️ Đã xóa bài', 'info');
     }
 
     function adminAddChapter() {
-      const name = prompt('Tên chương mới:');
+      // Chọn sách để thêm vào
+      const bookOptions = State.books.map(b => `${b.id}:${b.title}`).join('|');
+      const bookId = State.books.length > 0
+        ? (State.books.length === 1 ? State.books[0].id : prompt('Nhập ID sách (để trống = chưa phân loại):\n' + State.books.map((b,i) => `${i+1}. ${b.title} (ID: ${b.id})`).join('\n')))
+        : null;
+      
+      const name = prompt('Tên bài học mới:');
       if (!name || !name.trim()) return;
       const newChapter = {
         id: 'ch_' + Date.now(),
         title: name.trim(),
-        name: name.trim(),
-        bookId: null,
-        bookName: '',
-        pageRange: '',
+        bookId: bookId || null,
+        num: State.chapters.filter(ch => ch.bookId === bookId).length + 1,
+        pages: 0,
+        startPage: 0,
+        endPage: 0,
+        studied: false,
         order: State.chapters.length,
         vocab: []
       };
@@ -1633,7 +1751,23 @@ Bài 15: Trang 36-37..."
       State.save();
       adminRenderChapters();
       if (typeof renderLibrary === 'function') renderLibrary();
-      toast('✅ Đã thêm chương "' + newChapter.name + '"', 'success');
+      toast('✅ Đã thêm bài "' + newChapter.title + '"', 'success');
+    }
+
+    function adminAddBook() {
+      const name = prompt('Tên sách/giáo trình mới:');
+      if (!name || !name.trim()) return;
+      if (!State.books) State.books = [];
+      const newBook = {
+        id: 'book_' + Date.now(),
+        title: name.trim(),
+        numPages: 0
+      };
+      State.books.push(newBook);
+      State.save();
+      adminRenderChapters();
+      if (typeof renderLibrary === 'function') renderLibrary();
+      toast('✅ Đã thêm sách "' + newBook.title + '"', 'success');
     }
 
     // ===== ADMIN DICTATION MANAGEMENT =====
