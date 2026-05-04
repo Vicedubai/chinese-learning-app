@@ -54,6 +54,8 @@ const State = {
     DB.set('dictationPlaylist', this.dictationPlaylist);
     DB.set('progress', this.progress);
     DB.set('session', this.session);
+    // Lưu timestamp để so sánh với cloud
+    DB.set('local_saved_at', Date.now());
   },
   saveSession(data) {
     this.session = { ...this.session, ...data };
@@ -157,6 +159,11 @@ function toast(msg, type = 'info', icon = '💬') {
 
 // ===== NAVIGATION =====
 function navigate(page) {
+  // Save current scroll position before navigating
+  if (currentPage) {
+    sessionStorage.setItem(`scroll-${currentPage}`, window.scrollY || document.documentElement.scrollTop);
+  }
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pg = document.getElementById(`page-${page}`);
@@ -164,6 +171,10 @@ function navigate(page) {
   const nav = document.querySelector(`[data-page="${page}"]`);
   if (nav) nav.classList.add('active');
   currentPage = page;
+  window.currentPage = page; // Ensure it's accessible globally
+  
+  // Save current page to sessionStorage
+  sessionStorage.setItem('currentPage', page);
 
   // Restore session if available
   const session = State.session;
@@ -198,6 +209,22 @@ function navigate(page) {
     document.getElementById('ex-session').style.display = 'block';
     document.getElementById('ex-result').style.display = 'none';
     showExercise();
+  }
+  
+  // Restore scroll position after a short delay (to ensure content is rendered)
+  setTimeout(() => {
+    const savedScroll = sessionStorage.getItem(`scroll-${page}`);
+    if (savedScroll) {
+      window.scrollTo({
+        top: parseInt(savedScroll),
+        behavior: 'instant' // Use 'instant' for immediate scroll, 'smooth' for animated
+      });
+    } else {
+      // If no saved position, scroll to top
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, 50);
+}
     toast('📝 Tiếp tục bài tập trước đó', 'info', '🔄');
   } else if (session.currentTask === 'dictation' && page === 'dictation' && session.dictationQueue.length > 0) {
     dictSentences = session.dictationQueue;
@@ -222,7 +249,10 @@ function navigate(page) {
     if (page === 'dashboard') renderDashboard();
   }
 }
-let currentPage = 'dashboard';
+
+// Initialize currentPage from sessionStorage or default to dashboard
+let currentPage = sessionStorage.getItem('currentPage') || 'dashboard';
+window.currentPage = currentPage; // Ensure it's accessible globally
 
 function updateXPBar() {
   const xp = State.progress.xp || 0;

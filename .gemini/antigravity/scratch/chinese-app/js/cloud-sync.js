@@ -152,6 +152,31 @@ const CloudSync = {
       }
 
       const d = data.vocab;
+      const cloudPushedAt = d.pushedAt || 0;
+      const localSavedAt = DB.get('local_saved_at', 0);
+
+      // ── SMART MERGE: Chỉ ghi đè nếu cloud MỚI HƠN local ──
+      // Nếu local có dữ liệu MỚI HƠN cloud → không ghi đè (tránh mất data)
+      const localHasContent = State.chapters.length > 0 || State.cards.length > 0;
+      const cloudIsNewer = cloudPushedAt > localSavedAt;
+      const forcePull = !silent; // Khi user chủ động nhấn pull → luôn lấy cloud
+
+      if (localHasContent && !cloudIsNewer && !forcePull) {
+        console.log(`ℹ️ Local data (${new Date(localSavedAt).toLocaleTimeString()}) mới hơn cloud (${new Date(cloudPushedAt).toLocaleTimeString()}) → giữ nguyên local`);
+        return false;
+      }
+
+      // Nếu local có data mới hơn nhưng user đang pull thủ công → hỏi xác nhận
+      if (localHasContent && !cloudIsNewer && forcePull) {
+        const ok = confirm(
+          `⚠️ Dữ liệu LOCAL của bạn MỚI HƠN dữ liệu Cloud!\n\n` +
+          `Local lưu lúc: ${new Date(localSavedAt).toLocaleString()}\n` +
+          `Cloud push lúc: ${new Date(cloudPushedAt).toLocaleString()}\n\n` +
+          `Bạn có chắc muốn GHI ĐÈ local bằng dữ liệu cloud cũ hơn không?\n` +
+          `(Nhấn OK = mất dữ liệu local mới hơn, Cancel = giữ nguyên local)`
+        );
+        if (!ok) return false;
+      }
 
       const books = this.safeArr(d.books).map(b => ({
         ...b,
@@ -166,7 +191,6 @@ const CloudSync = {
 
       const cards = this.safeArr(d.cards).map(c => ({
         ...c,
-        // Đảm bảo cards từ version cũ vẫn hoạt động
         chinese: c.chinese || c.front || '',
         vietnamese: c.vietnamese || c.back || ''
       }));
@@ -179,6 +203,8 @@ const CloudSync = {
       if (dictationPlaylist.length > 0) State.dictationPlaylist = dictationPlaylist;
 
       State.save();
+      // Cập nhật local_saved_at để tránh pull lại không cần thiết
+      DB.set('local_saved_at', cloudPushedAt);
 
       if (typeof renderLibrary === 'function') renderLibrary();
       if (typeof renderDashboard === 'function') renderDashboard();
