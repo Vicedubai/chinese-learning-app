@@ -1655,19 +1655,15 @@ Bài 15: Trang 36-37..."
       const savedPage = sessionStorage.getItem('currentPage');
       
       // Initialize with saved page or default to dashboard
-      if (savedPage) {
-        // Set currentPage immediately
-        window.currentPage = savedPage;
-        
+      if (savedPage && savedPage !== 'dashboard') {
         // Navigate to saved page
-        if (savedPage !== 'dashboard') {
-          // Delay navigation slightly to ensure DOM is ready
-          setTimeout(() => {
-            navigate(savedPage);
-          }, 10);
-        }
+        // Delay navigation slightly to ensure DOM is ready
+        setTimeout(() => {
+          navigate(savedPage);
+        }, 50);
       } else {
-        // First time visit, set to dashboard
+        // First time visit or dashboard, ensure we're on dashboard
+        currentPage = 'dashboard';
         window.currentPage = 'dashboard';
         sessionStorage.setItem('currentPage', 'dashboard');
       }
@@ -1940,22 +1936,29 @@ Bài 15: Trang 36-37..."
       toast('🗑️ Đã xóa bài nghe', 'info');
     }
 
-    // ===== AUTO-PULL GLOBAL DATA KHI LOAD TRANG (kể cả Guest) =====
+    // ===== AUTO-PULL GLOBAL DATA - AN TOÀN =====
     document.addEventListener('DOMContentLoaded', () => {
-      // Tải dữ liệu global ngay khi mở trang (silent, không cần đăng nhập)
-      // Delay nhỏ để đảm bảo Supabase client đã khởi tạo xong
+      // CHỈ tự động pull nếu local HOÀN TOÀN trống (lần đầu dùng app)
       setTimeout(async () => {
-        const pulled = await CloudSync.pullGlobalData(true);
-        if (pulled) {
-          // Cập nhật badge sau khi pull
-          const badge = document.getElementById('ch-count-badge');
-          if (badge) badge.textContent = State.chapters.length + ' chương';
+        const localIsEmpty = State.chapters.length === 0 && State.cards.length === 0;
+        if (localIsEmpty) {
+          console.log('📥 Local trống → Auto-pull từ cloud...');
+          const pulled = await CloudSync.pullGlobalData(true);
+          if (pulled) {
+            const badge = document.getElementById('ch-count-badge');
+            if (badge) badge.textContent = State.chapters.length + ' chương';
+          }
+        } else {
+          console.log(`✅ Local có ${State.chapters.length} bài/${State.cards.length} từ → không auto-pull`);
         }
       }, 1500);
 
-      // Cũng pull lại sau khi đăng nhập (để lấy tiến trình cá nhân)
+      // Sau đăng nhập: CHỈ pull nếu local trống
       document.addEventListener('auth:loggedin', () => {
-        setTimeout(() => CloudSync.pullGlobalData(true), 500);
+        setTimeout(() => {
+          const localIsEmpty = State.chapters.length === 0 && State.cards.length === 0;
+          if (localIsEmpty) CloudSync.pullGlobalData(true);
+        }, 500);
       });
     });
   </script>
