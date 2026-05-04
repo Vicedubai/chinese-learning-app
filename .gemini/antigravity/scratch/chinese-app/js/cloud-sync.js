@@ -3,7 +3,7 @@
 
 const CloudSync = {
   GLOBAL_ROW_ID: 'global_content_v1',
-  TIMEOUT_MS: 15000, // 15 giây timeout
+  TIMEOUT_MS: 30000, // 30 giây timeout (tăng từ 15s)
 
   // Helper: đảm bảo giá trị luôn là array
   safeArr(v) {
@@ -52,24 +52,23 @@ const CloudSync = {
 
       // ── Bước 3: Chuẩn hoá cards - CHỈ GIỮ TRƯỜNG CẦN THIẾT ──
       if (btn) btn.innerText = '⏳ Gói flashcards... (2/3)';
-      const cards = this.safeArr(State.cards).map(c => ({
-        id: c.id,
-        chapterId: c.chapterId || null,
-        // Từ vựng (library.js fields)
-        chinese: c.chinese || '',
-        pinyin: c.pinyin || '',
-        wordType: c.wordType || '',
-        vietnamese: c.vietnamese || '',
-        example: c.example || '',
-        // Deck (nếu là flashcard độc lập)
-        deck: c.deck || null,
-        // SM-2 spaced repetition
-        ef: c.ef || 2.5,
-        interval: c.interval || 1,
-        reps: c.reps || 0,
-        nextReview: c.nextReview || 0
-        // LOẠI BỎ: front/back (trùng với chinese/vietnamese)
-      }));
+      const cards = this.safeArr(State.cards)
+        .filter(c => c.id && c.chinese) // Lọc bỏ cards không hợp lệ
+        .map(c => ({
+          id: c.id,
+          chapterId: c.chapterId || null,
+          // Từ vựng (library.js fields)
+          chinese: c.chinese || '',
+          pinyin: c.pinyin || '',
+          wordType: c.wordType || '',
+          vietnamese: c.vietnamese || '',
+          // SM-2 spaced repetition (chỉ giữ essential fields)
+          ef: c.ef || 2.5,
+          interval: c.interval || 1,
+          reps: c.reps || 0,
+          nextReview: c.nextReview || 0
+          // LOẠI BỎ: example, front/back, deck, và các field không cần thiết
+        }));
 
       // ── Bước 4: Chuẩn hoá dictation ──
       const dictationPlaylist = this.safeArr(State.dictationPlaylist).map(p => ({
@@ -102,21 +101,35 @@ const CloudSync = {
       const size = this.calcSize(payload.vocab);
       console.log(`📦 CloudSync payload: ${size} (${books.length} sách, ${chapters.length} bài, ${cards.length} cards)`);
 
-      // ── Bước 5: Upload với timeout ──
+      // ── Bước 5: Upload với timeout và retry ──
       if (btn) btn.innerText = `⏳ Đang upload... (3/3)`;
 
-      // Dùng Promise.race với timeout để tránh treo vô hạn
-      const uploadPromise = client.from('chapters').upsert(payload, { returning: 'minimal' });
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout sau ${this.TIMEOUT_MS/1000}s - dữ liệu quá lớn hoặc mạng chậm`)), this.TIMEOUT_MS)
-      );
+      let lastError = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            if (btn) btn.innerText = `⏳ Đang upload... (3/3) - Lần ${attempt}/3`;
+            await new Promise(r => setTimeout(r, 1000 * attempt)); // Exponential backoff
+          }
 
-      const { error } = await Promise.race([uploadPromise, timeoutPromise]);
-      if (error) throw error;
+          // Dùng Promise.race với timeout để tránh treo vô hạn
+          const uploadPromise = client.from('chapters').upsert(payload, { returning: 'minimal' });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Timeout sau ${this.TIMEOUT_MS/1000}s - dữ liệu quá lớn hoặc mạng chậm`)), this.TIMEOUT_MS)
+          );
 
-      toast(`✅ Đồng bộ xong! ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng · ${dictationPlaylist.length} bài nghe (${size})`, 'success');
-      console.log('✅ CloudSync push thành công, payload size:', size);
-      return true;
+          const { error } = await Promise.race([uploadPromise, timeoutPromise]);
+          if (error) throw error;
+
+          toast(`✅ Đồng bộ xong! ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng · ${dictationPlaylist.length} bài nghe (${size})`, 'success');
+          console.log('✅ CloudSync push thành công, payload size:', size);
+          return true;
+        } catch (err) {
+          lastError = err;
+          console.warn(`⚠️ Attempt ${attempt}/3 failed:`, err.message);
+          if (attempt === 3) throw lastError;
+        }
+      }
 
     } catch (err) {
       console.error('❌ CloudSync.pushGlobalData error:', err);
