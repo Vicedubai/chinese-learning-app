@@ -209,22 +209,6 @@ function navigate(page) {
     document.getElementById('ex-session').style.display = 'block';
     document.getElementById('ex-result').style.display = 'none';
     showExercise();
-  }
-  
-  // Restore scroll position after a short delay (to ensure content is rendered)
-  setTimeout(() => {
-    const savedScroll = sessionStorage.getItem(`scroll-${page}`);
-    if (savedScroll) {
-      window.scrollTo({
-        top: parseInt(savedScroll),
-        behavior: 'instant' // Use 'instant' for immediate scroll, 'smooth' for animated
-      });
-    } else {
-      // If no saved position, scroll to top
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, 50);
-}
     toast('📝 Tiếp tục bài tập trước đó', 'info', '🔄');
   } else if (session.currentTask === 'dictation' && page === 'dictation' && session.dictationQueue.length > 0) {
     dictSentences = session.dictationQueue;
@@ -248,6 +232,16 @@ function navigate(page) {
     if (page === 'library') renderLibrary();
     if (page === 'dashboard') renderDashboard();
   }
+
+  // Restore scroll position after a short delay
+  setTimeout(() => {
+    const savedScroll = sessionStorage.getItem(`scroll-${page}`);
+    if (savedScroll) {
+      window.scrollTo({ top: parseInt(savedScroll), behavior: 'instant' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, 50);
 }
 
 // Initialize currentPage from sessionStorage or default to dashboard
