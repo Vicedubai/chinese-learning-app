@@ -1012,14 +1012,9 @@ Bài 15: Trang 36-37..."
         <!-- Format Example -->
         <div style="background:var(--bg-3);border-radius:8px;padding:12px">
           <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">📌 Định dạng chuẩn:</div>
-          <pre style="font-size:11px;color:var(--text-3);overflow-x:auto;margin:0;line-height:1.5">0:00 - 0:05
-Xin chào, đây là video tiếng Trung.
-
-0:05 - 0:10
-Hôm nay chúng ta sẽ học từ vựng mới.
-
-0:10 - 0:15
-Bạn đã sẵn sàng chưa?</pre>
+          <pre style="font-size:11px;color:var(--text-3);overflow-x:auto;margin:0;line-height:1.5">[02:30] 一个四五岁的小男孩把球滚到大街上去了， | Một cậu bé khoảng bốn năm tuổi làm quả bóng lăn ra đường lớn,
+[02:37] 他要跑过去拿，被警察看见了， | cậu bé định chạy ra lấy, bị cảnh sát nhìn thấy,
+[02:42] 警察就帮孩子把球捡了回来，然后把小男孩抱到路边。 | cảnh sát liền giúp đứa bé nhặt quả bóng về, sau đó bế cậu bé vào lề đường.</pre>
         </div>
       </div>
 
@@ -1435,19 +1430,20 @@ Bạn đã sẵn sàng chưa?</pre>
 Yêu cầu:
 1. Xem video YouTube từ link trên
 2. Tạo transcript theo định dạng chuẩn:
-   - Mỗi dòng: [thời gian bắt đầu] [nội dung]
+   - Mỗi dòng: [thời gian bắt đầu] [nội dung tiếng Trung] | [bản dịch tiếng Việt]
    - Chỉ cần thời gian bắt đầu (mm:ss), không cần thời gian kết thúc
    - Mỗi câu một dòng
    - Không cách dòng trống giữa các câu
+   - BẮT BUỘC: Bản dịch tiếng Việt phải chuẩn với văn phong, logic và hàm ý toàn bài
 
 Ví dụ định dạng:
-0:00 Xin chào, đây là video tiếng Trung.
-0:05 Hôm nay chúng ta sẽ học từ vựng mới.
-0:10 Transcript phải chính xác, đầy đủ, không bỏ sót.
-0:15 Chỉ trả về transcript, không cần giải thích thêm.
+[02:30] 一个四五岁的小男孩把球滚到大街上去了， | Một cậu bé khoảng bốn năm tuổi làm quả bóng lăn ra đường lớn,
+[02:37] 他要跑过去拿，被警察看见了， | cậu bé định chạy ra lấy, bị cảnh sát nhìn thấy,
+[02:42] 警察就帮孩子把球捡了回来，然后把小男孩抱到路边。 | cảnh sát liền giúp đứa bé nhặt quả bóng về, sau đó bế cậu bé vào lề đường.
 
 3. Transcript phải chính xác, đầy đủ, không bỏ sót
-4. Chỉ trả về transcript, không cần giải thích thêm`;
+4. Bản dịch phải tự nhiên, phù hợp ngữ cảnh, thể hiện đúng ý nghĩa và cảm xúc
+5. Chỉ trả về transcript, không cần giải thích thêm`;
       
       document.getElementById('gemini-prompt-display').value = prompt;
       
@@ -1491,19 +1487,20 @@ Ví dụ định dạng:
 Yêu cầu:
 1. Xem video YouTube từ link trên
 2. Tạo transcript theo định dạng chuẩn:
-   - Mỗi dòng: [thời gian bắt đầu] [nội dung]
+   - Mỗi dòng: [thời gian bắt đầu] [nội dung tiếng Trung] | [bản dịch tiếng Việt]
    - Chỉ cần thời gian bắt đầu (mm:ss), không cần thời gian kết thúc
    - Mỗi câu một dòng
    - Không cách dòng trống giữa các câu
+   - BẮT BUỘC: Bản dịch tiếng Việt phải chuẩn với văn phong, logic và hàm ý toàn bài
 
 Ví dụ định dạng:
-0:00 Xin chào, đây là video tiếng Trung.
-0:05 Hôm nay chúng ta sẽ học từ vựng mới.
-0:10 Transcript phải chính xác, đầy đủ, không bỏ sót.
-0:15 Chỉ trả về transcript, không cần giải thích thêm.
+[02:30] 一个四五岁的小男孩把球滚到大街上去了， | Một cậu bé khoảng bốn năm tuổi làm quả bóng lăn ra đường lớn,
+[02:37] 他要跑过去拿，被警察看见了， | cậu bé định chạy ra lấy, bị cảnh sát nhìn thấy,
+[02:42] 警察就帮孩子把球捡了回来，然后把小男孩抱到路边。 | cảnh sát liền giúp đứa bé nhặt quả bóng về, sau đó bế cậu bé vào lề đường.
 
 3. Transcript phải chính xác, đầy đủ, không bỏ sót
-4. Chỉ trả về transcript, không cần giải thích thêm`;
+4. Bản dịch phải tự nhiên, phù hợp ngữ cảnh, thể hiện đúng ý nghĩa và cảm xúc
+5. Chỉ trả về transcript, không cần giải thích thêm`;
 
       // Copy prompt to clipboard
       navigator.clipboard.writeText(prompt).then(() => {
