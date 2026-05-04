@@ -310,7 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusEl = document.getElementById('auto-sync-status');
     if (statusEl) {
       if (isLoggedIn) {
-        statusEl.innerHTML = `<span style="color:var(--green-light)">✅ ${Auth.currentUser.email?.split('@')[0] || 'Đã đăng nhập'}</span>`;
+        const name = Auth.currentUser.email?.split('@')[0] || 'Đã đăng nhập';
+        statusEl.innerHTML = `<span style="color:var(--green-light)">✅ ${name}</span>`;
       } else {
         statusEl.innerHTML = `<span style="color:var(--text-3)">☁️ Chưa đăng nhập</span>`;
       }
@@ -327,10 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     AutoSync.updateSyncStatus('disabled');
   });
 
-  // Chỉ khởi động auto-sync nếu đã đăng nhập
-  setTimeout(() => {
-    if (window.Auth && Auth.currentUser) {
-      AutoSync.start();
-    }
-  }, 2000);
+  // KHÔNG gọi AutoSync.start() hay loadFromServer() nữa
+  // CloudSync.pullGlobalData() là cơ chế đồng bộ duy nhất
 });
+
