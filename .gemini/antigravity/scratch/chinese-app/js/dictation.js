@@ -270,7 +270,8 @@ function startDictationSession() {
         title: 'Video Luyện Nghe ' + (State.dictationPlaylist.length + 1),
         completedCount: 0,
         totalCount: dictSentences.length,
-        lastIndex: 0
+        lastIndex: 0,
+        playlist: null // Start as loose video
       };
       State.dictationPlaylist.push(existing);
     } else {
@@ -315,33 +316,96 @@ function renderDictationPlaylist() {
     return;
   }
   
-  list.innerHTML = playlist.slice().reverse().map(p => {
-    const thumb = `https://img.youtube.com/vi/${p.videoId}/mqdefault.jpg`;
-    const progress = p.totalCount ? Math.round((p.completedCount || 0) / p.totalCount * 100) : 0;
+  // Group videos by playlist
+  const grouped = {};
+  const loose = [];
+  
+  playlist.forEach(p => {
+    if (p.playlist && p.playlist.trim()) {
+      if (!grouped[p.playlist]) {
+        grouped[p.playlist] = [];
+      }
+      grouped[p.playlist].push(p);
+    } else {
+      loose.push(p);
+    }
+  });
+  
+  let html = '';
+  
+  // Render grouped playlists
+  Object.keys(grouped).forEach(playlistName => {
+    const videos = grouped[playlistName];
+    const isCollapsed = localStorage.getItem(`playlist-${playlistName}-collapsed`) === 'true';
+    const icon = isCollapsed ? '▶' : '▼';
     
-    return `
-      <div class="playlist-item" style="display:flex;gap:12px;padding:8px;border-radius:8px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:8px">
-        <div style="position:relative;width:120px;height:68px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#000;cursor:pointer" onclick="loadDictationFromPlaylist('${p.id}')">
-          <img src="${thumb}" style="width:100%;height:100%;object-fit:cover;opacity:0.8">
-          <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;padding:2px 4px;border-radius:2px">
-            ${p.totalCount || '?'} câu
-          </div>
-          ${progress > 0 ? `<div style="position:absolute;bottom:0;left:0;height:3px;background:var(--blue);width:${progress}%"></div>` : ''}
+    html += `
+      <div class="playlist-group" style="margin-bottom:16px">
+        <div class="playlist-header" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-3);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="togglePlaylistGroup('${playlistName}')">
+          <span style="font-size:14px">${icon}</span>
+          <span style="font-size:14px;font-weight:600;color:var(--text-1)">📁 ${playlistName}</span>
+          <span class="badge" style="font-size:10px;margin-left:auto">${videos.length} videos</span>
+          <button class="btn btn-ghost" onclick="event.stopPropagation();editPlaylistName('${playlistName}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên playlist">✏️</button>
         </div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
-          <div class="font-medium" id="dict-title-${p.id}" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;color:var(--text-1)" title="${p.title}">${p.title}</div>
-          <div class="flex justify-between items-center">
-            <span class="text-xs" style="color:var(--text-3)">${progress}% hoàn thành</span>
-            <span class="text-xs" style="color:var(--gold)">${p.completedCount || 0}/${p.totalCount || '?'}</span>
-          </div>
-          <div class="flex justify-end gap-4 mt-4">
-            <button class="btn btn-ghost" onclick="event.stopPropagation();editDictationTitle('${p.id}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên">✏️</button>
-            <button class="btn btn-ghost" onclick="event.stopPropagation();deleteDictationPlaylist('${p.id}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa">🗑️</button>
-          </div>
+        <div class="playlist-videos" id="playlist-${playlistName.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:${isCollapsed ? 'none' : 'block'};margin-left:20px;margin-top:8px">
+          ${videos.map(p => renderVideoItem(p, true)).join('')}
         </div>
       </div>
     `;
-  }).join('');
+  });
+  
+  // Render loose videos
+  if (loose.length > 0) {
+    html += `
+      <div class="loose-videos" style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;padding-left:4px">📄 Videos chưa có playlist:</div>
+        ${loose.map(p => renderVideoItem(p, false)).join('')}
+      </div>
+    `;
+  }
+  
+  // Add drop zone for creating new playlist
+  html += `
+    <div class="playlist-drop-zone" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;margin-top:16px" ondrop="handlePlaylistDrop(event)" ondragover="handlePlaylistDragOver(event)">
+      ➕ Kéo video vào đây để tạo playlist mới
+    </div>
+  `;
+  
+  list.innerHTML = html;
+  
+  // Initialize drag & drop handlers
+  initializePlaylistDragDrop();
+}
+}
+
+function renderVideoItem(p, inPlaylist) {
+  const thumb = `https://img.youtube.com/vi/${p.videoId}/mqdefault.jpg`;
+  const progress = p.totalCount ? Math.round((p.completedCount || 0) / p.totalCount * 100) : 0;
+  
+  return `
+    <div class="playlist-item" draggable="true" data-video-id="${p.id}" style="display:flex;gap:12px;padding:8px;border-radius:8px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:8px;cursor:move" ondragstart="handleVideoDragStart(event)" ondragend="handleVideoDragEnd(event)">
+      <div style="position:relative;width:120px;height:68px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#000;cursor:pointer" onclick="loadDictationFromPlaylist('${p.id}')">
+        <img src="${thumb}" style="width:100%;height:100%;object-fit:cover;opacity:0.8">
+        <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;padding:2px 4px;border-radius:2px">
+          ${p.totalCount || '?'} câu
+        </div>
+        ${progress > 0 ? `<div style="position:absolute;bottom:0;left:0;height:3px;background:var(--blue);width:${progress}%"></div>` : ''}
+      </div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
+        <div class="font-medium" id="dict-title-${p.id}" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;color:var(--text-1)" title="${p.title}">${p.title}</div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs" style="color:var(--text-3)">${progress}% hoàn thành</span>
+          <span class="text-xs" style="color:var(--gold)">${p.completedCount || 0}/${p.totalCount || '?'}</span>
+        </div>
+        ${inPlaylist ? '' : `<div class="text-xs" style="color:var(--text-3);margin-top:4px">Chưa có playlist</div>`}
+        <div class="flex justify-end gap-4 mt-4">
+          <button class="btn btn-ghost" onclick="event.stopPropagation();editDictationTitle('${p.id}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên">✏️</button>
+          ${!inPlaylist ? `<button class="btn btn-ghost" onclick="event.stopPropagation();assignToPlaylist('${p.id}')" style="color:var(--blue);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Thêm vào playlist">📁</button>` : `<button class="btn btn-ghost" onclick="event.stopPropagation();removeFromPlaylist('${p.id}')" style="color:var(--orange);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Rời playlist">📤</button>`}
+          <button class="btn btn-ghost" onclick="event.stopPropagation();deleteDictationPlaylist('${p.id}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function loadDictationFromPlaylist(id) {
@@ -1130,9 +1194,169 @@ function savePlaylistOrder() {
   toast('✅ Đã lưu thứ tự mới', 'success');
 }
 
-// ===== UTILITY FUNCTIONS =====
-function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
+// ===== HIERARCHICAL PLAYLIST FUNCTIONS =====
+
+function togglePlaylistGroup(playlistName) {
+  const containerId = `playlist-${playlistName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  const container = document.getElementById(containerId);
+  const isCollapsed = container.style.display === 'none';
+  
+  container.style.display = isCollapsed ? 'block' : 'none';
+  localStorage.setItem(`playlist-${playlistName}-collapsed`, isCollapsed ? 'false' : 'true');
+  
+  // Update icon
+  const header = container.previousElementSibling;
+  const icon = header.querySelector('span');
+  icon.textContent = isCollapsed ? '▼' : '▶';
+}
+
+function editPlaylistName(oldName) {
+  const newName = prompt('Nhập tên playlist mới:', oldName);
+  if (!newName || newName.trim() === '' || newName === oldName) return;
+  
+  // Update all videos in this playlist
+  State.dictationPlaylist.forEach(video => {
+    if (video.playlist === oldName) {
+      video.playlist = newName.trim();
+    }
+  });
+  
+  // Update localStorage keys
+  const oldCollapsedKey = `playlist-${oldName}-collapsed`;
+  const newCollapsedKey = `playlist-${newName.trim()}-collapsed`;
+  const collapsedState = localStorage.getItem(oldCollapsedKey);
+  if (collapsedState) {
+    localStorage.setItem(newCollapsedKey, collapsedState);
+    localStorage.removeItem(oldCollapsedKey);
+  }
+  
+  State.save();
+  renderDictationPlaylist();
+  toast(`✅ Đã đổi tên playlist thành "${newName.trim()}"`, 'success');
+}
+
+function assignToPlaylist(videoId) {
+  const video = State.dictationPlaylist.find(v => v.id === videoId);
+  if (!video) return;
+  
+  // Get existing playlist names
+  const existingPlaylists = [...new Set(State.dictationPlaylist
+    .filter(v => v.playlist && v.playlist.trim())
+    .map(v => v.playlist))];
+  
+  let playlistName;
+  if (existingPlaylists.length > 0) {
+    const options = existingPlaylists.map((name, index) => `${index + 1}. ${name}`).join('\n');
+    const choice = prompt(`Chọn playlist:\n${options}\n\nHoặc nhập tên playlist mới:`);
+    
+    if (!choice) return;
+    
+    // Check if it's a number (selecting existing playlist)
+    const choiceNum = parseInt(choice);
+    if (!isNaN(choiceNum) && choiceNum > 0 && choiceNum <= existingPlaylists.length) {
+      playlistName = existingPlaylists[choiceNum - 1];
+    } else {
+      playlistName = choice.trim();
+    }
+  } else {
+    playlistName = prompt('Nhập tên playlist:');
+  }
+  
+  if (!playlistName || playlistName.trim() === '') return;
+  
+  video.playlist = playlistName.trim();
+  State.save();
+  renderDictationPlaylist();
+  toast(`✅ Đã thêm video vào playlist "${playlistName.trim()}"`, 'success');
+}
+
+function removeFromPlaylist(videoId) {
+  const video = State.dictationPlaylist.find(v => v.id === videoId);
+  if (!video) return;
+  
+  if (!confirm(`Rời video "${video.title}" khỏi playlist "${video.playlist}"?`)) return;
+  
+  delete video.playlist;
+  State.save();
+  renderDictationPlaylist();
+  toast('✅ Đã rời khỏi playlist', 'success');
+}
+
+// ===== DRAG & DROP FUNCTIONS =====
+
+let draggedVideoId = null;
+
+function handleVideoDragStart(event) {
+  draggedVideoId = event.target.closest('.playlist-item').dataset.videoId;
+  event.target.closest('.playlist-item').style.opacity = '0.5';
+}
+
+function handleVideoDragEnd(event) {
+  event.target.closest('.playlist-item').style.opacity = '1';
+  draggedVideoId = null;
+}
+
+function handlePlaylistDragOver(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = 'var(--blue)';
+  event.currentTarget.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+}
+
+function handlePlaylistDrop(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = 'var(--border)';
+  event.currentTarget.style.backgroundColor = 'transparent';
+  
+  if (!draggedVideoId) return;
+  
+  const playlistName = prompt('Nhập tên playlist mới:');
+  if (!playlistName || playlistName.trim() === '') return;
+  
+  const video = State.dictationPlaylist.find(v => v.id === draggedVideoId);
+  if (video) {
+    video.playlist = playlistName.trim();
+    State.save();
+    renderDictationPlaylist();
+    toast(`✅ Đã tạo playlist "${playlistName.trim()}" và thêm video`, 'success');
+  }
+}
+
+// Add drag over handlers for playlist headers
+function addPlaylistDragHandlers() {
+  document.querySelectorAll('.playlist-header').forEach(header => {
+    header.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      header.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+    });
+    
+    header.addEventListener('dragleave', (e) => {
+      header.style.backgroundColor = 'var(--bg-3)';
+    });
+    
+    header.addEventListener('drop', (e) => {
+      e.preventDefault();
+      header.style.backgroundColor = 'var(--bg-3)';
+      
+      if (!draggedVideoId) return;
+      
+      const playlistName = header.querySelector('span:nth-child(2)').textContent.replace('📁 ', '');
+      const video = State.dictationPlaylist.find(v => v.id === draggedVideoId);
+      
+      if (video) {
+        video.playlist = playlistName;
+        State.save();
+        renderDictationPlaylist();
+        toast(`✅ Đã chuyển video vào playlist "${playlistName}"`, 'success');
+      }
+    });
+  });
+}
+
+// Call this after rendering
+function initializePlaylistDragDrop() {
+  setTimeout(() => {
+    addPlaylistDragHandlers();
+  }, 100);
 }
 
 function openCreatePlaylistModal() {
@@ -1420,6 +1644,11 @@ function rateMiniCard(q) {
   miniFcCards.splice(miniFcIdx, 1);
   if (miniFcIdx >= miniFcCards.length) miniFcIdx = 0;
   renderMiniFlashcard(0);
+}
+
+// ===== UTILITY FUNCTIONS =====
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
 }
 
 function navMiniFlashcard(dir) {
