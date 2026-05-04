@@ -1671,6 +1671,23 @@ Bài 15: Trang 36-37..."
       const due = State.getDueCards().length;
       document.getElementById('badge-due').textContent = due;
       document.getElementById('ch-count-badge').textContent = State.chapters.length + ' chương';
+      
+      // Restore current page and scroll position on page reload
+      const savedPage = sessionStorage.getItem('currentPage');
+      if (savedPage && savedPage !== 'dashboard') {
+        navigate(savedPage);
+      } else {
+        // If no saved page or dashboard, restore scroll position for dashboard
+        setTimeout(() => {
+          const savedScroll = sessionStorage.getItem('scroll-dashboard');
+          if (savedScroll) {
+            window.scrollTo({
+              top: parseInt(savedScroll),
+              behavior: 'instant'
+            });
+          }
+        }, 100);
+      }
     });
 
     // Close modal on overlay click
@@ -1918,10 +1935,22 @@ Bài 15: Trang 36-37..."
       toast('🗑️ Đã xóa bài nghe', 'info');
     }
 
-    // Tự động tải dữ liệu cloud khi đăng nhập xong
+    // ===== AUTO-PULL GLOBAL DATA KHI LOAD TRANG (kể cả Guest) =====
     document.addEventListener('DOMContentLoaded', () => {
+      // Tải dữ liệu global ngay khi mở trang (silent, không cần đăng nhập)
+      // Delay nhỏ để đảm bảo Supabase client đã khởi tạo xong
+      setTimeout(async () => {
+        const pulled = await CloudSync.pullGlobalData(true);
+        if (pulled) {
+          // Cập nhật badge sau khi pull
+          const badge = document.getElementById('ch-count-badge');
+          if (badge) badge.textContent = State.chapters.length + ' chương';
+        }
+      }, 1500);
+
+      // Cũng pull lại sau khi đăng nhập (để lấy tiến trình cá nhân)
       document.addEventListener('auth:loggedin', () => {
-        CloudSync.pullGlobalData(true);
+        setTimeout(() => CloudSync.pullGlobalData(true), 500);
       });
     });
   </script>
