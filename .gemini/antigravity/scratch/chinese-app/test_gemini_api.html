@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Gemini API Save</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px 10px 0;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .success {
+      background: #d4edda;
+      border-color: #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border-color: #f5c6cb;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Test Gemini API Key Save</h1>
+    
+    <div>
+      <label>Gemini API Key:</label>
+      <input type="password" id="input-gemini-key" placeholder="AIzaSy...">
+    </div>
+    
+    <div>
+      <button onclick="testSave()">Save API Key</button>
+      <button onclick="testLoad()">Load API Key</button>
+      <button onclick="testClear()">Clear API Key</button>
+    </div>
+    
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    function showResult(message, isSuccess = true) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+    }
+
+    function testSave() {
+      const apiKey = document.getElementById('input-gemini-key').value.trim();
+      
+      if (!apiKey) {
+        showResult('❌ Please enter an API Key', false);
+        return;
+      }
+      
+      try {
+        localStorage.setItem('gemini-api-key', apiKey);
+        showResult('✅ API Key saved successfully!\n\nStored value: ' + apiKey, true);
+      } catch (error) {
+        showResult('❌ Error saving API Key:\n' + error.message, false);
+      }
+    }
+
+    function testLoad() {
+      try {
+        const apiKey = localStorage.getItem('gemini-api-key');
+        if (apiKey) {
+          showResult('✅ API Key loaded successfully!\n\nStored value: ' + apiKey, true);
+          document.getElementById('input-gemini-key').value = apiKey;
+        } else {
+          showResult('⚠️ No API Key found in localStorage', false);
+        }
+      } catch (error) {
+        showResult('❌ Error loading API Key:\n' + error.message, false);
+      }
+    }
+
+    function testClear() {
+      try {
+        localStorage.removeItem('gemini-api-key');
+        document.getElementById('input-gemini-key').value = '';
+        showResult('✅ API Key cleared successfully!', true);
+      } catch (error) {
+        showResult('❌ Error clearing API Key:\n' + error.message, false);
+      }
+    }
+
+    // Load on page load
+    window.addEventListener('load', () => {
+      testLoad();
+    });
+  </script>
+</body>
+</html>

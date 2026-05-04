@@ -785,6 +785,35 @@ body {
     padding: 8px 12px !important;
     font-size: 14px !important;
   }
+  
+  /* Playlist Manager - Mobile */
+  .playlist-manager-item {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .playlist-manager-item > div:nth-child(2) {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/9;
+  }
+  
+  .playlist-manager-item .flex.flex-col {
+    flex-direction: row !important;
+    justify-content: space-around !important;
+  }
+  
+  /* Reorder items - Mobile */
+  .reorder-item {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .reorder-item > div:nth-child(2) {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/9;
+  }
 }
 
 /* Extra small phones */

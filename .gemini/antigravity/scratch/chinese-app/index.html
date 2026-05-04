@@ -1155,6 +1155,12 @@ Bài 15: Trang 36-37..."
                 style="padding:4px 6px;font-size:12px">➕</button>
               <button class="btn btn-ghost btn-sm" onclick="openImportYouTubePlaylistModal()"
                 title="Nhập playlist YouTube" style="padding:4px 6px;font-size:12px">📺</button>
+              <button class="btn btn-ghost btn-sm" onclick="openPlaylistManager()" title="Quản lý playlist"
+                style="padding:4px 6px;font-size:12px">⚙️</button>
+              <button class="btn btn-ghost btn-sm" onclick="openMergePlaylistModal()" title="Gộp playlist"
+                style="padding:4px 6px;font-size:12px">🔗</button>
+              <button class="btn btn-ghost btn-sm" onclick="openReorderPlaylistModal()" title="Sắp xếp"
+                style="padding:4px 6px;font-size:12px">🔄</button>
             </div>
           </div>
           <div id="dictation-playlist-list"
@@ -2249,6 +2255,94 @@ Ví dụ định dạng:
       });
     });
   </script>
+
+  <!-- PLAYLIST MANAGEMENT MODALS -->
+  
+  <!-- PLAYLIST MANAGER MODAL -->
+  <div class="modal-overlay" id="modal-playlist-manager" style="display:none">
+    <div class="modal" style="max-width:800px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <span class="modal-title">📚 Quản lý Playlist</span>
+        <button class="modal-close" onclick="closeModal('modal-playlist-manager')">✕</button>
+      </div>
+      
+      <div style="flex:1;overflow-y:auto;padding:0 24px">
+        <div class="flex justify-between items-center mb-16">
+          <span class="text-sm text-muted">Tổng cộng: <span id="playlist-manager-count">0</span> video</span>
+          <div class="flex gap-8">
+            <button class="btn btn-ghost btn-sm" onclick="sortPlaylist('title')">🔤 Tên</button>
+            <button class="btn btn-ghost btn-sm" onclick="sortPlaylist('date')">📅 Ngày</button>
+            <button class="btn btn-ghost btn-sm" onclick="sortPlaylist('progress')">📊 Tiến độ</button>
+          </div>
+        </div>
+        
+        <div id="playlist-manager-list" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Playlist items will be rendered here -->
+        </div>
+      </div>
+      
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="selectAllPlaylist()">✅ Chọn tất cả</button>
+        <button class="btn btn-ghost" onclick="deselectAllPlaylist()">❌ Bỏ chọn</button>
+        <button class="btn btn-ghost" style="color:var(--red)" onclick="deleteSelectedPlaylist()">🗑️ Xóa đã chọn</button>
+        <button class="btn btn-primary" onclick="closeModal('modal-playlist-manager')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MERGE PLAYLIST MODAL -->
+  <div class="modal-overlay" id="modal-merge-playlist" style="display:none">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <span class="modal-title">🔗 Gộp Playlist</span>
+        <button class="modal-close" onclick="closeModal('modal-merge-playlist')">✕</button>
+      </div>
+      
+      <div style="padding:0 24px">
+        <p class="text-sm text-muted mb-16">Chọn các video để gộp thành một playlist mới:</p>
+        
+        <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div id="merge-playlist-list">
+            <!-- Checkboxes for each video -->
+          </div>
+        </div>
+        
+        <div class="mt-16">
+          <label class="label">📝 Tên playlist mới</label>
+          <input class="input" id="merge-playlist-name" placeholder="Nhập tên playlist...">
+        </div>
+      </div>
+      
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('modal-merge-playlist')">Hủy</button>
+        <button class="btn btn-primary" onclick="executeMergePlaylist()">🔗 Gộp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REORDER PLAYLIST MODAL -->
+  <div class="modal-overlay" id="modal-reorder-playlist" style="display:none">
+    <div class="modal" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <span class="modal-title">🔄 Sắp xếp Playlist</span>
+        <button class="modal-close" onclick="closeModal('modal-reorder-playlist')">✕</button>
+      </div>
+      
+      <div style="flex:1;overflow-y:auto;padding:0 24px">
+        <p class="text-sm text-muted mb-16">Kéo thả để sắp xếp lại thứ tự video:</p>
+        
+        <div id="reorder-playlist-list" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Draggable playlist items -->
+        </div>
+      </div>
+      
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('modal-reorder-playlist')">Hủy</button>
+        <button class="btn btn-primary" onclick="savePlaylistOrder()">💾 Lưu thứ tự</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>
