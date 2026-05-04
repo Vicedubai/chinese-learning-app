@@ -931,9 +931,6 @@ async function importYouTubePlaylist() {
     toast(`❌ ${e.message}`, 'error');
   }
 }
-    toast(`Lỗi: ${e.message}`, 'error');
-  }
-}
 
 function openRenameVideoModal(playlistId, videoId) {
   currentRenamingPlaylistId = playlistId;
