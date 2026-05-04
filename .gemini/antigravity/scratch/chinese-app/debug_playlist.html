@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Playlist Data</title>
+</head>
+<body>
+    <h1>Debug Playlist Data</h1>
+    <div id="debug-output"></div>
+    
+    <script>
+        // Check localStorage directly
+        const dictationPlaylist = localStorage.getItem('dictationPlaylist');
+        const output = document.getElementById('debug-output');
+        
+        output.innerHTML = `
+            <h2>Raw localStorage data:</h2>
+            <pre>${dictationPlaylist || 'null'}</pre>
+            
+            <h2>Parsed data:</h2>
+            <pre>${JSON.stringify(JSON.parse(dictationPlaylist || '[]'), null, 2)}</pre>
+            
+            <h2>Data length:</h2>
+            <p>${JSON.parse(dictationPlaylist || '[]').length} items</p>
+        `;
+    </script>
+</body>
+</html>
