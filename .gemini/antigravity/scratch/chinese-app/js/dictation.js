@@ -321,7 +321,7 @@ function renderDictationPlaylist() {
     
     return `
       <div class="playlist-item" style="display:flex;gap:12px;padding:8px;border-radius:8px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:8px">
-        <div style="position:relative;width:120px;height:68px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#000;cursor:pointer" onclick="loadDictationFromPlaylist(${p.id})">
+        <div style="position:relative;width:120px;height:68px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#000;cursor:pointer" onclick="loadDictationFromPlaylist('${p.id}')">
           <img src="${thumb}" style="width:100%;height:100%;object-fit:cover;opacity:0.8">
           <div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.8);color:#fff;font-size:10px;padding:2px 4px;border-radius:2px">
             ${p.totalCount || '?'} câu
@@ -329,14 +329,14 @@ function renderDictationPlaylist() {
           ${progress > 0 ? `<div style="position:absolute;bottom:0;left:0;height:3px;background:var(--blue);width:${progress}%"></div>` : ''}
         </div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
-          <div class="font-medium" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;color:var(--text-1)" title="${p.title}">${p.title}</div>
+          <div class="font-medium" id="dict-title-${p.id}" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;color:var(--text-1)" title="${p.title}">${p.title}</div>
           <div class="flex justify-between items-center">
             <span class="text-xs" style="color:var(--text-3)">${progress}% hoàn thành</span>
             <span class="text-xs" style="color:var(--gold)">${p.completedCount || 0}/${p.totalCount || '?'}</span>
           </div>
           <div class="flex justify-end gap-4 mt-4">
-            <button class="btn btn-ghost" onclick="event.stopPropagation();openRenameVideoModal(${p.id})" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto">✏️</button>
-            <button class="btn btn-ghost" onclick="event.stopPropagation();deleteDictationPlaylist(${p.id})" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto">🗑️</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();editDictationTitle('${p.id}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên">✏️</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();deleteDictationPlaylist('${p.id}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa">🗑️</button>
           </div>
         </div>
       </div>
@@ -359,6 +359,53 @@ function deleteDictationPlaylist(id) {
   State.dictationPlaylist = State.dictationPlaylist.filter(x => x.id !== id);
   State.save();
   renderDictationPlaylist();
+}
+
+// ===== EDIT DICTATION TITLE - INLINE EDITING =====
+function editDictationTitle(id) {
+  const item = State.dictationPlaylist.find(x => x.id === id);
+  if (!item) return;
+  
+  const titleEl = document.getElementById(`dict-title-${id}`);
+  if (!titleEl) return;
+  
+  // Create inline edit input
+  const currentTitle = item.title;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentTitle;
+  input.className = 'input';
+  input.style.cssText = 'font-size:13px;font-weight:600;color:var(--text-1);padding:4px 8px;border:1px solid var(--gold);border-radius:4px;width:100%;background:var(--bg-3)';
+  
+  // Replace title with input
+  titleEl.replaceWith(input);
+  input.focus();
+  input.select();
+  
+  // Save on Enter or blur
+  const saveEdit = () => {
+    const newTitle = input.value.trim();
+    
+    if (newTitle && newTitle !== currentTitle) {
+      item.title = newTitle;
+      State.save();
+      renderDictationPlaylist();
+      toast(`✅ Đã đổi tên thành "${newTitle}"`, 'success');
+    } else {
+      // Revert
+      renderDictationPlaylist();
+    }
+  };
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      renderDictationPlaylist();
+    }
+  });
+  
+  input.addEventListener('blur', saveEdit);
 }
 
 function toggleDictSetup() {
