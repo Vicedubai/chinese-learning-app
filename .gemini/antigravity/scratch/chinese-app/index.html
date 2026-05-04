@@ -2220,28 +2220,30 @@ Ví dụ định dạng:
       toast('🗑️ Đã xóa bài nghe', 'info');
     }
 
-    // ===== AUTO-PULL GLOBAL DATA - AN TOÀN =====
+    // ===== AUTO-PULL GLOBAL DATA - SMART SYNC =====
     document.addEventListener('DOMContentLoaded', () => {
-      // CHỈ tự động pull nếu local HOÀN TOÀN trống (lần đầu dùng app)
+      // Tự động pull dữ liệu khi mở app (cho cả Guest và logged-in users)
       setTimeout(async () => {
-        const localIsEmpty = State.chapters.length === 0 && State.cards.length === 0;
-        if (localIsEmpty) {
-          console.log('📥 Local trống → Auto-pull từ cloud...');
-          const pulled = await CloudSync.pullGlobalData(true);
-          if (pulled) {
-            const badge = document.getElementById('ch-count-badge');
-            if (badge) badge.textContent = State.chapters.length + ' chương';
-          }
+        console.log('📥 Checking for updates from cloud...');
+        
+        // Pull dữ liệu từ cloud (silent mode)
+        // CloudSync.pullGlobalData() sẽ tự động so sánh timestamp và chỉ update nếu cloud mới hơn
+        const pulled = await CloudSync.pullGlobalData(true);
+        
+        if (pulled) {
+          console.log('✅ Updated from cloud');
+          const badge = document.getElementById('ch-count-badge');
+          if (badge) badge.textContent = State.chapters.length + ' chương';
         } else {
-          console.log(`✅ Local có ${State.chapters.length} bài/${State.cards.length} từ → không auto-pull`);
+          console.log('ℹ️ Local data is up to date');
         }
       }, 1500);
 
-      // Sau đăng nhập: CHỈ pull nếu local trống
+      // Sau đăng nhập: Pull dữ liệu mới
       document.addEventListener('auth:loggedin', () => {
         setTimeout(() => {
-          const localIsEmpty = State.chapters.length === 0 && State.cards.length === 0;
-          if (localIsEmpty) CloudSync.pullGlobalData(true);
+          console.log('📥 User logged in, pulling latest data...');
+          CloudSync.pullGlobalData(true);
         }, 500);
       });
     });
