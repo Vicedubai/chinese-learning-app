@@ -3,12 +3,19 @@
 
 const CloudSync = {
   GLOBAL_ROW_ID: 'global_content_v1',
+  TIMEOUT_MS: 15000, // 15 giây timeout
 
   // Helper: đảm bảo giá trị luôn là array
   safeArr(v) {
     if (Array.isArray(v)) return v;
     if (v && typeof v === 'object') return Object.values(v);
     return [];
+  },
+
+  // Helper: tính size của JSON payload
+  calcSize(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj)).length;
+    return bytes < 1024 ? `${bytes}B` : bytes < 1048576 ? `${(bytes/1024).toFixed(1)}KB` : `${(bytes/1048576).toFixed(2)}MB`;
   },
 
   // ===== PUSH: Đẩy dữ liệu từ Local lên Supabase (Admin only) =====
@@ -18,20 +25,21 @@ const CloudSync = {
     if (!Auth.isAdmin) { toast('❌ Chỉ Admin mới có thể đồng bộ dữ liệu', 'error'); return false; }
 
     const btn = document.getElementById('btn-sync-global');
-    if (btn) { btn.innerText = '⏳ Đang đồng bộ...'; btn.disabled = true; }
+    if (btn) { btn.innerText = '⏳ Đang chuẩn bị...'; btn.disabled = true; }
 
     try {
-      // Chuẩn hoá books
+      // ── Bước 1: Chuẩn hoá books (nhỏ) ──
+      if (btn) btn.innerText = '⏳ Gói dữ liệu... (1/3)';
       const books = this.safeArr(State.books).map(b => ({
         id: b.id,
-        title: b.title || b.name || 'Sách chưa đặt tên',
+        title: b.title || b.name || 'Sách',
         numPages: b.numPages || 0
       }));
 
-      // Chuẩn hoá chapters - GIỮ NGUYÊN TẤT CẢ TRƯỜNG QUAN TRỌNG
+      // ── Bước 2: Chuẩn hoá chapters (nhỏ, không có rawText) ──
       const chapters = this.safeArr(State.chapters).map(ch => ({
         id: ch.id,
-        title: ch.title || ch.name || '',   // library.js dùng .title
+        title: ch.title || ch.name || '',
         bookId: ch.bookId || null,
         num: ch.num || 0,
         pages: ch.pages || 0,
@@ -39,35 +47,36 @@ const CloudSync = {
         endPage: ch.endPage || 0,
         studied: ch.studied || false,
         order: ch.order ?? 0
-        // Không lưu rawText (quá lớn), không lưu vocab ở đây (cards đã có chapterId)
+        // rawText bị loại bỏ - nguyên nhân chính gây payload lớn
       }));
 
-      // Chuẩn hoá flashcards - GIỮ NGUYÊN CẤU TRÚC CỦA LIBRARY
+      // ── Bước 3: Chuẩn hoá cards - CHỈ GIỮ TRƯỜNG CẦN THIẾT ──
+      if (btn) btn.innerText = '⏳ Gói flashcards... (2/3)';
       const cards = this.safeArr(State.cards).map(c => ({
         id: c.id,
         chapterId: c.chapterId || null,
+        // Từ vựng (library.js fields)
         chinese: c.chinese || '',
         pinyin: c.pinyin || '',
         wordType: c.wordType || '',
         vietnamese: c.vietnamese || '',
         example: c.example || '',
-        // Flashcard riêng (không từ chapter)
-        front: c.front || c.chinese || '',
-        back: c.back || c.vietnamese || '',
+        // Deck (nếu là flashcard độc lập)
         deck: c.deck || null,
-        // SM-2 data
+        // SM-2 spaced repetition
         ef: c.ef || 2.5,
         interval: c.interval || 1,
         reps: c.reps || 0,
-        nextReview: c.nextReview || Date.now()
+        nextReview: c.nextReview || 0
+        // LOẠI BỎ: front/back (trùng với chinese/vietnamese)
       }));
 
-      // Chuẩn hoá dictation playlist
+      // ── Bước 4: Chuẩn hoá dictation ──
       const dictationPlaylist = this.safeArr(State.dictationPlaylist).map(p => ({
         id: p.id,
         videoId: p.videoId || '',
         url: p.url || '',
-        title: p.title || 'Bài nghe chưa đặt tên',
+        title: p.title || 'Bài nghe',
         transcript: p.transcript || '',
         totalCount: p.totalCount || 0,
         completedCount: p.completedCount || 0,
@@ -85,17 +94,32 @@ const CloudSync = {
           cards,
           dictationPlaylist,
           pushedAt: Date.now(),
-          version: 2
+          version: 3
         }
       };
 
-      const { error } = await client.from('chapters').upsert(payload);
+      // Log payload size để debug
+      const size = this.calcSize(payload.vocab);
+      console.log(`📦 CloudSync payload: ${size} (${books.length} sách, ${chapters.length} bài, ${cards.length} cards)`);
+
+      // ── Bước 5: Upload với timeout ──
+      if (btn) btn.innerText = `⏳ Đang upload... (3/3)`;
+
+      // Dùng Promise.race với timeout để tránh treo vô hạn
+      const uploadPromise = client.from('chapters').upsert(payload, { returning: 'minimal' });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout sau ${this.TIMEOUT_MS/1000}s - dữ liệu quá lớn hoặc mạng chậm`)), this.TIMEOUT_MS)
+      );
+
+      const { error } = await Promise.race([uploadPromise, timeoutPromise]);
       if (error) throw error;
 
-      toast(`✅ Đồng bộ: ${books.length} sách, ${chapters.length} bài, ${cards.length} flashcards, ${dictationPlaylist.length} bài nghe`, 'success');
+      toast(`✅ Đồng bộ xong! ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng · ${dictationPlaylist.length} bài nghe (${size})`, 'success');
+      console.log('✅ CloudSync push thành công, payload size:', size);
       return true;
+
     } catch (err) {
-      console.error('CloudSync.pushGlobalData error:', err);
+      console.error('❌ CloudSync.pushGlobalData error:', err);
       toast('❌ Lỗi đồng bộ: ' + (err.message || JSON.stringify(err)), 'error');
       return false;
     } finally {
@@ -109,40 +133,46 @@ const CloudSync = {
     if (!client) return false;
 
     try {
-      const { data, error } = await client
+      const pullPromise = client
         .from('chapters')
         .select('vocab')
         .eq('id', this.GLOBAL_ROW_ID)
         .single();
 
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout khi tải dữ liệu')), this.TIMEOUT_MS)
+      );
+
+      const { data, error } = await Promise.race([pullPromise, timeoutPromise]);
+
       if (error && error.code !== 'PGRST116') throw error;
       if (!data || !data.vocab) {
-        if (!silent) toast('ℹ️ Chưa có dữ liệu trên cloud. Hãy Push trước!', 'info');
+        if (!silent) toast('ℹ️ Chưa có dữ liệu trên cloud. Admin cần Push trước!', 'info');
         return false;
       }
 
       const d = data.vocab;
 
-      // Lấy và validate books
       const books = this.safeArr(d.books).map(b => ({
         ...b,
         title: b.title || b.name || 'Sách'
       }));
 
-      // Lấy và validate chapters - ĐẢM BẢO title luôn có
       const chapters = this.safeArr(d.chapters).map(ch => ({
         ...ch,
         title: ch.title || ch.name || 'Bài học',
-        vocab: [] // chapters không lưu vocab nữa (cards đã có chapterId)
+        vocab: []
       }));
 
-      // Lấy và validate cards
-      const cards = this.safeArr(d.cards);
+      const cards = this.safeArr(d.cards).map(c => ({
+        ...c,
+        // Đảm bảo cards từ version cũ vẫn hoạt động
+        chinese: c.chinese || c.front || '',
+        vietnamese: c.vietnamese || c.back || ''
+      }));
 
-      // Lấy và validate dictation playlist
       const dictationPlaylist = this.safeArr(d.dictationPlaylist);
 
-      // Cập nhật State - MERGE books, không ghi đè hoàn toàn
       if (books.length > 0) State.books = books;
       if (chapters.length > 0) State.chapters = chapters;
       if (cards.length > 0) State.cards = cards;
@@ -150,17 +180,17 @@ const CloudSync = {
 
       State.save();
 
-      // Re-render UI
       if (typeof renderLibrary === 'function') renderLibrary();
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
 
       if (!silent) {
-        toast(`☁️ Đã tải: ${books.length} sách, ${chapters.length} bài, ${cards.length} từ vựng, ${dictationPlaylist.length} bài nghe`, 'success');
+        toast(`☁️ Đã tải: ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng`, 'success');
       }
       return true;
+
     } catch (err) {
-      console.error('CloudSync.pullGlobalData error:', err);
+      console.error('❌ CloudSync.pullGlobalData error:', err);
       if (!silent) toast('❌ Lỗi tải dữ liệu: ' + err.message, 'error');
       return false;
     }
