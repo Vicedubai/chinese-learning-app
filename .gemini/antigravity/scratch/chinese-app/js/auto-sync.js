@@ -295,15 +295,42 @@ const AutoSync = {
   }
 };
 
-// Khởi động auto sync khi load trang
+// Khởi động và quản lý sidebar sync theo auth state
 document.addEventListener('DOMContentLoaded', () => {
-  // Đã chuyển sang dùng Supabase thay vì Railway nên có thể bật
-  const autoSyncEnabled = true;
-  
-  if (autoSyncEnabled && localStorage.getItem('auto-sync-enabled') !== 'false') {
-    AutoSync.start();
-  } else {
-    AutoSync.updateSyncStatus('disabled');
-    console.log('ℹ️ Auto-sync disabled. Data saved in browser localStorage.');
+  // Cập nhật sidebar dựa theo trạng thái đăng nhập
+  function updateSidebarSync() {
+    const guestEl = document.getElementById('sidebar-guest-sync');
+    const userEl = document.getElementById('sidebar-user-sync');
+    const isLoggedIn = !!(window.Auth && Auth.currentUser);
+
+    if (guestEl) guestEl.style.display = isLoggedIn ? 'none' : 'block';
+    if (userEl) userEl.style.display = isLoggedIn ? 'block' : 'none';
+
+    // Cập nhật status text
+    const statusEl = document.getElementById('auto-sync-status');
+    if (statusEl) {
+      if (isLoggedIn) {
+        statusEl.innerHTML = `<span style="color:var(--green-light)">✅ ${Auth.currentUser.email?.split('@')[0] || 'Đã đăng nhập'}</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color:var(--text-3)">☁️ Chưa đăng nhập</span>`;
+      }
+    }
   }
+
+  // Gọi ngay khi load
+  updateSidebarSync();
+
+  // Cập nhật khi auth thay đổi
+  document.addEventListener('auth:loggedin', updateSidebarSync);
+  document.addEventListener('auth:loggedout', () => {
+    updateSidebarSync();
+    AutoSync.updateSyncStatus('disabled');
+  });
+
+  // Chỉ khởi động auto-sync nếu đã đăng nhập
+  setTimeout(() => {
+    if (window.Auth && Auth.currentUser) {
+      AutoSync.start();
+    }
+  }, 2000);
 });

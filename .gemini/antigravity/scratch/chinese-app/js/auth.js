@@ -66,6 +66,9 @@ const Auth = {
 
     this.updateUI();
     
+    // Phát event để các module khác lắng nghe
+    document.dispatchEvent(new CustomEvent('auth:loggedin', { detail: { user } }));
+    
     if (typeof toast === 'function') {
       toast(`👋 Chào ${user.email}!`, 'success');
     }
@@ -102,6 +105,9 @@ const Auth = {
     this.currentUser = null;
     this.isAdmin = false;
     this.updateUI();
+    
+    // Phát event để các module khác lắng nghe
+    document.dispatchEvent(new CustomEvent('auth:loggedout'));
     
     if (typeof toast === 'function') {
       toast('👋 Đã đăng xuất', 'info');
