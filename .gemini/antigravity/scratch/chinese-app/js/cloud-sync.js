@@ -123,6 +123,13 @@ const CloudSync = {
 
           toast(`✅ Đồng bộ xong! ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng · ${dictationPlaylist.length} bài nghe (${size})`, 'success');
           console.log('✅ CloudSync push thành công, payload size:', size);
+          
+          // ✅ Cập nhật giao diện sau khi đồng bộ thành công
+          if (typeof renderFlashcards === 'function') renderFlashcards();
+          if (typeof renderLibrary === 'function') renderLibrary();
+          if (typeof renderDashboard === 'function') renderDashboard();
+          if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
+          
           return true;
         } catch (err) {
           lastError = err;
