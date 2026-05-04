@@ -231,6 +231,13 @@ function navigate(page) {
     if (page === 'diagnostic') renderDiagnostic();
     if (page === 'library') renderLibrary();
     if (page === 'dashboard') renderDashboard();
+    if (page === 'dictation') {
+      renderDictationPlaylist();
+      // Restore collapse state
+      if (typeof restorePlaylistCollapseState === 'function') {
+        setTimeout(() => restorePlaylistCollapseState(), 100);
+      }
+    }
   }
 
   // Restore scroll position after a short delay

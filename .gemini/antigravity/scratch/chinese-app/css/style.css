@@ -442,6 +442,16 @@ body {
   .grid-4 { grid-template-columns: 1fr 1fr; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .modal { max-width: 90%; padding: 24px; }
+  
+  /* Dictation layout for tablet - 2 columns */
+  .dictation-layout {
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+  }
+  .dictation-col-left { display: none; } /* Hide mini flashcard on tablet */
+  .dict-sticky-card {
+    height: calc(100vh - 100px);
+  }
 }
 
 /* Mobile Phones */
@@ -629,7 +639,7 @@ body {
   .dictation-layout { 
     display: grid; 
     grid-template-columns: 1fr; /* Stacked layout on mobile */
-    gap: 20px; 
+    gap: 16px; 
   }
   .dictation-col-left { display: none; } /* Hide mini flashcard on mobile completely as requested */
   .dictation-col-right { order: -1; } /* Show playlist at the top on mobile */
@@ -639,6 +649,143 @@ body {
     min-height: 100px; 
     font-size: 14px;
   }
+  
+  /* Dictation Setup Card - Mobile */
+  #dict-setup-card {
+    padding: 16px !important;
+  }
+  
+  #dict-setup-card .flex.gap-8 {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  #dict-setup-card .flex.gap-8 .btn,
+  #dict-setup-card .flex.gap-8 .input {
+    width: 100% !important;
+    flex: none !important;
+  }
+  
+  #dict-setup-card .btn {
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+  }
+  
+  /* YouTube Container - Mobile */
+  #yt-container {
+    aspect-ratio: 16/9 !important;
+    min-height: 200px;
+  }
+  
+  /* Dictation Exercise - Mobile */
+  #dictation-exercise .card {
+    padding: 16px !important;
+    min-height: 280px !important;
+  }
+  
+  #dictation-exercise textarea {
+    min-height: 120px !important;
+    font-size: 16px !important;
+    padding: 16px !important;
+  }
+  
+  #dictation-exercise .btn {
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Dictation Controls - Mobile */
+  #dictation-exercise .flex.items-center.gap-12 {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  
+  #dictation-exercise .flex.items-center.gap-12 .btn {
+    min-width: 44px;
+    height: 44px;
+  }
+  
+  /* Auto Transcript Status - Mobile */
+  #auto-transcript-status {
+    padding: 12px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Gemini Transcript Helper - Mobile */
+  #modal-gemini-transcript .modal {
+    max-width: 95% !important;
+    padding: 16px !important;
+    margin: 8px !important;
+  }
+  
+  #gemini-transcript-input {
+    height: 150px !important;
+    font-size: 13px !important;
+  }
+  
+  /* Playlist items - Mobile optimized */
+  .playlist-item {
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  
+  .playlist-item > div:first-child {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/9;
+  }
+  
+  .playlist-item img {
+    opacity: 1 !important;
+  }
+  
+  .playlist-item .font-medium {
+    font-size: 14px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.4 !important;
+  }
+  
+  .playlist-item .flex.justify-between {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .playlist-item .flex.justify-end {
+    justify-content: space-between !important;
+    width: 100%;
+  }
+  
+  .playlist-item button {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  /* Playlist header - Mobile optimized */
+  #dictation-playlist-container .flex.justify-between.items-center {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  #dictation-playlist-container .flex.justify-between.items-center > label {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  
+  #dictation-playlist-container .flex.gap-4 {
+    flex-direction: row !important;
+    width: auto !important;
+    gap: 8px !important;
+  }
+  
+  #dictation-playlist-container .flex.gap-4 .btn {
+    width: auto !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+  }
+}
 
 /* Extra small phones */
 @media (max-width: 380px) {

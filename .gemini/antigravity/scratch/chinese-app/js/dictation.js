@@ -789,6 +789,40 @@ function drawRadar(scores, labels) {
 
 let currentRenamingPlaylistId = null;
 
+// ===== PLAYLIST COLLAPSE/EXPAND =====
+function togglePlaylistCollapse() {
+  const playlistList = document.getElementById('dictation-playlist-list');
+  const collapseIcon = document.getElementById('playlist-collapse-icon');
+  
+  if (!playlistList || !collapseIcon) return;
+  
+  const isCollapsed = playlistList.style.display === 'none';
+  
+  if (isCollapsed) {
+    // Expand
+    playlistList.style.display = 'flex';
+    collapseIcon.textContent = '▼';
+    localStorage.setItem('playlist-collapsed', 'false');
+  } else {
+    // Collapse
+    playlistList.style.display = 'none';
+    collapseIcon.textContent = '▶';
+    localStorage.setItem('playlist-collapsed', 'true');
+  }
+}
+
+// Restore collapse state on page load
+function restorePlaylistCollapseState() {
+  const isCollapsed = localStorage.getItem('playlist-collapsed') === 'true';
+  const playlistList = document.getElementById('dictation-playlist-list');
+  const collapseIcon = document.getElementById('playlist-collapse-icon');
+  
+  if (isCollapsed && playlistList && collapseIcon) {
+    playlistList.style.display = 'none';
+    collapseIcon.textContent = '▶';
+  }
+}
+
 function openCreatePlaylistModal() {
   document.getElementById('new-playlist-name').value = '';
   document.getElementById('modal-create-playlist').style.display = 'flex';

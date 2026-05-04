@@ -1150,7 +1150,8 @@ Bạn đã sẵn sàng chưa?</pre>
       <div class="dictation-col-right">
         <div id="dictation-playlist-container" class="card dict-sticky-card">
           <div class="flex justify-between items-center mb-16">
-            <label class="label mb-0 flex items-center gap-8">
+            <label class="label mb-0 flex items-center gap-8" style="cursor:pointer" onclick="togglePlaylistCollapse()">
+              <span id="playlist-collapse-icon">▼</span>
               <span>📚 Bài luyện (Playlist)</span>
               <span class="badge" id="dict-playlist-count" style="font-size:11px">0</span>
             </label>
@@ -1967,6 +1968,9 @@ Ví dụ định dạng:
       if (transInput) transInput.addEventListener('input', e => DB.set('draftDictationTranscript', e.target.value));
 
       if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
+      if (typeof restorePlaylistCollapseState === 'function') {
+        setTimeout(() => restorePlaylistCollapseState(), 150);
+      }
       if (typeof renderChatHistory === 'function') renderChatHistory();
 
       document.getElementById('daily-tip').textContent = TIPS[new Date().getDay() % TIPS.length];
