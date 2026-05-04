@@ -80,6 +80,11 @@ const Auth = {
     if (this.isAdmin && typeof Admin !== 'undefined') {
       Admin.init();
     }
+    
+    // ✅ Tự động pull dữ liệu từ CloudSync khi đăng nhập
+    if (typeof CloudSync !== 'undefined') {
+      await CloudSync.onLogin();
+    }
   },
 
   // Tạo user record mới

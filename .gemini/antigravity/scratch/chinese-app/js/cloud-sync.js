@@ -229,6 +229,7 @@ const CloudSync = {
       if (typeof renderLibrary === 'function') renderLibrary();
       if (typeof renderDashboard === 'function') renderDashboard();
       if (typeof renderDictationPlaylist === 'function') renderDictationPlaylist();
+      if (typeof renderFlashcards === 'function') renderFlashcards();
 
       if (!silent) {
         toast(`☁️ Đã tải: ${books.length} sách · ${chapters.length} bài · ${cards.length} từ vựng`, 'success');
