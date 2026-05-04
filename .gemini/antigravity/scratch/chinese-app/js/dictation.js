@@ -847,57 +847,90 @@ async function importYouTubePlaylist() {
   statusEl.style.display = 'block';
   
   try {
-    // Use YouTube Data API to fetch playlist videos
-    // Note: This requires API key, so we'll use a simpler approach with yt-dlp or similar
-    // For now, we'll show a message to user
-    
     document.getElementById('yt-import-icon').textContent = '⏳';
     document.getElementById('yt-import-msg').textContent = 'Đang tải danh sách video từ YouTube...';
     
-    // Fetch playlist info using noembed API (no auth needed)
-    const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/playlist?list=${playlistId}`);
+    // Use YouTube Data API v3 with default API key
+    const API_KEY = 'AIzaSyAcr5xrIzl02jskeIeYI8Yn3vGysygbQsE'; // Default API key
     
-    if (!response.ok) {
+    // Fetch playlist info
+    const playlistResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${API_KEY}`
+    );
+    
+    if (!playlistResponse.ok) {
       throw new Error('Không thể tải playlist. Vui lòng kiểm tra link.');
     }
     
-    const data = await response.json();
+    const playlistData = await playlistResponse.json();
     
-    if (!data.title) {
+    if (!playlistData.items || playlistData.items.length === 0) {
       throw new Error('Playlist không tồn tại hoặc không công khai');
     }
     
-    const playlistName = customName || data.title;
+    const playlistInfo = playlistData.items[0].snippet;
+    const playlistName = customName || playlistInfo.title;
     
-    // Create new playlist
-    if (!State.dictationPlaylists) State.dictationPlaylists = [];
+    // Fetch playlist videos (max 50 videos)
+    const videosResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${API_KEY}`
+    );
     
-    const newPlaylist = {
-      id: uid(),
-      name: playlistName,
-      videos: [],
-      url: url,
-      youtubePlaylistId: playlistId,
-      createdAt: Date.now()
-    };
+    if (!videosResponse.ok) {
+      throw new Error('Không thể tải danh sách video');
+    }
     
-    // Note: Full video list requires YouTube API key
-    // For now, we'll create the playlist and user can add videos manually
-    State.dictationPlaylists.push(newPlaylist);
+    const videosData = await videosResponse.json();
+    const videos = videosData.items || [];
+    
+    document.getElementById('yt-import-msg').textContent = `Đã tìm thấy ${videos.length} video. Đang tạo playlist...`;
+    
+    // Create dictation items for each video
+    if (!State.dictationPlaylist) State.dictationPlaylist = [];
+    
+    let addedCount = 0;
+    for (const video of videos) {
+      const videoId = video.snippet.resourceId.videoId;
+      const videoTitle = video.snippet.title;
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      
+      // Check if video already exists
+      const exists = State.dictationPlaylist.find(p => p.videoId === videoId);
+      if (exists) continue;
+      
+      // Add to playlist
+      State.dictationPlaylist.push({
+        id: uid(),
+        videoId: videoId,
+        url: videoUrl,
+        title: `${playlistName} - ${videoTitle}`,
+        transcript: '', // User will add transcript later
+        totalCount: 0,
+        completedCount: 0,
+        order: State.dictationPlaylist.length
+      });
+      
+      addedCount++;
+    }
+    
     State.save();
     
     document.getElementById('yt-import-icon').textContent = '✅';
-    document.getElementById('yt-import-msg').textContent = `Đã tạo playlist "${playlistName}". Bạn có thể thêm video bằng cách dán link YouTube.`;
+    document.getElementById('yt-import-msg').textContent = `Đã thêm ${addedCount} video từ playlist "${playlistName}"!`;
     
     setTimeout(() => {
       document.getElementById('modal-import-yt-playlist').style.display = 'none';
       renderDictationPlaylist();
-      toast(`✅ Đã tạo playlist từ YouTube!`, 'success');
+      toast(`✅ Đã thêm ${addedCount} video từ YouTube playlist!`, 'success');
     }, 1500);
     
   } catch (e) {
+    console.error('Import playlist error:', e);
     document.getElementById('yt-import-icon').textContent = '❌';
     document.getElementById('yt-import-msg').textContent = `Lỗi: ${e.message}`;
+    toast(`❌ ${e.message}`, 'error');
+  }
+}
     toast(`Lỗi: ${e.message}`, 'error');
   }
 }
