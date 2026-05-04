@@ -178,16 +178,17 @@ function renderLibrary() {
     const isOpen = idx === 0;
     
     html += `
-    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden">
+    <div id="book-item-${book.id}" class="book-item" draggable="true" style="background:var(--bg-2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;cursor:grab;transition:all 0.2s" ondragstart="initBookDragStart(event, '${book.id}')" ondragend="resetBookDrag()" ondragover="handleBookDragOver(event, '${book.id}')" ondragleave="handleBookDragLeave(event, '${book.id}')" ondrop="handleBookDrop(event, '${book.id}')">
       <div style="padding:16px;background:rgba(240,180,41,0.05);cursor:pointer;display:flex;justify-content:space-between;align-items:center">
         <div class="flex gap-12 items-center" onclick="toggleBook('${book.id}')" style="flex:1">
           <span style="font-size:24px;filter:grayscale(1)">📕</span>
           <div>
-            <div style="font-weight:600;font-size:15px;color:var(--gold)">${book.title}</div>
+            <div style="font-weight:600;font-size:15px;color:var(--gold)" id="book-title-${book.id}">${book.title}</div>
             <div class="text-xs text-muted mt-4">${bookChapters.length} chương · ${bookCards.length} từ mới</div>
           </div>
         </div>
         <div class="flex items-center gap-12">
+          <button class="btn btn-sm btn-ghost" onclick="editBookName('${book.id}', event)" style="padding:4px 8px;border:none;color:var(--blue)" title="Chỉnh sửa tên">✏️</button>
           <button class="btn btn-sm btn-ghost" onclick="openMergeBookModal('${book.id}')" style="padding:4px 8px;border:none;color:var(--gold)" title="Gộp giáo trình">🔗</button>
           <button class="btn btn-sm btn-ghost" onclick="deleteBook('${book.id}', event)" style="padding:4px 8px;border:none;color:var(--red-light)" title="Xóa giáo trình">🗑️</button>
           <span id="book-icon-${book.id}" onclick="toggleBook('${book.id}')" style="color:var(--text-3);font-size:12px;padding:4px">${isOpen ? '▲' : '▼'}</span>
@@ -2171,3 +2172,190 @@ function mergeSelectedBooks(targetBookId) {
   renderDashboard();
   toast(`✅ Đã gộp ${booksToMerge.length} giáo trình vào "${targetBook.title}"!`, 'success');
 }
+
+
+// ===== BOOK DRAG & DROP =====
+
+let draggedBookId = null;
+
+/**
+ * Initialize book drag start
+ */
+function initBookDragStart(event, bookId) {
+  // Only allow drag if not clicking on buttons
+  if (event.target.closest('button')) {
+    event.preventDefault();
+    return;
+  }
+  
+  draggedBookId = bookId;
+  const bookItem = document.getElementById(`book-item-${bookId}`);
+  if (bookItem) {
+    bookItem.style.opacity = '0.6';
+    bookItem.style.transform = 'scale(0.98)';
+    event.dataTransfer.effectAllowed = 'move';
+  }
+}
+
+/**
+ * Handle book drag over
+ */
+function handleBookDragOver(event, bookId) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  
+  if (draggedBookId && draggedBookId !== bookId) {
+    const bookItem = document.getElementById(`book-item-${bookId}`);
+    if (bookItem) {
+      bookItem.style.borderTop = '3px solid var(--gold)';
+    }
+  }
+}
+
+/**
+ * Handle book drag leave
+ */
+function handleBookDragLeave(event, bookId) {
+  const bookItem = document.getElementById(`book-item-${bookId}`);
+  if (bookItem) {
+    bookItem.style.borderTop = '';
+  }
+}
+
+/**
+ * Handle book drop
+ */
+function handleBookDrop(event, targetBookId) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  if (!draggedBookId || draggedBookId === targetBookId) {
+    resetBookDrag();
+    return;
+  }
+  
+  // Reorder books
+  const draggedIndex = State.books.findIndex(b => b.id === draggedBookId);
+  const targetIndex = State.books.findIndex(b => b.id === targetBookId);
+  
+  if (draggedIndex !== -1 && targetIndex !== -1) {
+    // Remove dragged book
+    const [draggedBook] = State.books.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    const newIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    State.books.splice(newIndex, 0, draggedBook);
+    
+    State.save();
+    renderLibrary();
+    toast('✅ Đã sắp xếp lại sách', 'success');
+  }
+  
+  resetBookDrag();
+}
+
+/**
+ * Reset book drag state
+ */
+function resetBookDrag() {
+  if (draggedBookId) {
+    const bookItem = document.getElementById(`book-item-${draggedBookId}`);
+    if (bookItem) {
+      bookItem.style.opacity = '1';
+      bookItem.style.transform = '';
+      bookItem.style.borderTop = '';
+    }
+  }
+  draggedBookId = null;
+}
+
+/**
+ * Edit book name
+ */
+function editBookName(bookId, event) {
+  event.stopPropagation();
+  
+  const book = State.books.find(b => b.id === bookId);
+  if (!book) return;
+  
+  const titleEl = document.getElementById(`book-title-${bookId}`);
+  if (!titleEl) return;
+  
+  // Create inline edit
+  const currentTitle = book.title;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentTitle;
+  input.className = 'input';
+  input.style.cssText = 'font-size:15px;font-weight:600;color:var(--gold);padding:4px 8px;border:1px solid var(--gold);border-radius:4px;width:100%';
+  
+  // Replace title with input
+  titleEl.replaceWith(input);
+  input.focus();
+  input.select();
+  
+  // Save on Enter or blur
+  const saveEdit = () => {
+    const newTitle = input.value.trim();
+    
+    if (newTitle && newTitle !== currentTitle) {
+      book.title = newTitle;
+      State.save();
+      renderLibrary();
+      toast(`✅ Đã đổi tên thành "${newTitle}"`, 'success');
+    } else {
+      // Revert
+      renderLibrary();
+    }
+  };
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      renderLibrary();
+    }
+  });
+  
+  input.addEventListener('blur', saveEdit);
+}
+
+/**
+ * Add drag & drop event listeners to books
+ */
+function initBookDragDropListeners() {
+  document.querySelectorAll('.book-item').forEach(bookItem => {
+    const bookId = bookItem.id.replace('book-item-', '');
+    
+    bookItem.addEventListener('dragstart', (e) => {
+      if (!e.target.closest('button')) {
+        initBookDragStart(e, bookId);
+      }
+    });
+    
+    bookItem.addEventListener('dragend', () => {
+      resetBookDrag();
+    });
+    
+    bookItem.addEventListener('dragover', (e) => {
+      handleBookDragOver(e, bookId);
+    });
+    
+    bookItem.addEventListener('dragleave', (e) => {
+      handleBookDragLeave(e, bookId);
+    });
+    
+    bookItem.addEventListener('drop', (e) => {
+      handleBookDrop(e, bookId);
+    });
+  });
+}
+
+// Initialize drag & drop when library renders
+const originalRenderLibrary = renderLibrary;
+renderLibrary = function() {
+  originalRenderLibrary.call(this);
+  setTimeout(() => {
+    initBookDragDropListeners();
+  }, 100);
+};

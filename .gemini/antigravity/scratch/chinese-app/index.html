@@ -956,6 +956,86 @@ Bài 15: Trang 36-37..."
   </div>
   </div>
 
+  <!-- GEMINI TRANSCRIPT HELPER MODAL -->
+  <div class="modal-overlay" id="modal-gemini-transcript">
+    <div class="modal" style="max-width:900px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Tạo Script Thủ Công với Gemini AI</span>
+        <button class="modal-close" onclick="closeModal('modal-gemini-transcript')">✕</button>
+      </div>
+      
+      <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px">
+        <!-- YouTube Link Display -->
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">🔗 YouTube Link</div>
+          <div id="gemini-yt-link" style="font-size:13px;color:var(--gold);word-break:break-all;font-family:monospace">
+            (Chưa có link)
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.3);border-radius:8px;padding:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:8px">📝 Hướng dẫn:</div>
+          <ol style="font-size:12px;color:var(--text-2);line-height:1.8;margin:0;padding-left:20px">
+            <li>Nhấn nút 🚀 "Mở Gemini AI"</li>
+            <li>Prompt sẽ được copy tự động</li>
+            <li>Gemini sẽ mở trong tab mới</li>
+            <li>Paste prompt vào Gemini (Ctrl+V)</li>
+            <li>Gemini sẽ tạo transcript</li>
+            <li>Copy kết quả từ Gemini</li>
+            <li>Quay lại tab này</li>
+            <li>Dán vào ô Transcript bên dưới</li>
+            <li>Nhấn "✅ Lưu & Đóng"</li>
+          </ol>
+        </div>
+
+        <!-- Prompt Display (for reference) -->
+        <div>
+          <label class="label">📋 Prompt (Sẽ được copy tự động)</label>
+          <textarea id="gemini-prompt-display" class="input"
+            placeholder="Prompt sẽ hiển thị ở đây..."
+            style="width:100%;height:150px;resize:vertical;font-family:monospace;font-size:11px;line-height:1.5;color:var(--text-3)"
+            readonly></textarea>
+          <button class="btn btn-sm btn-ghost" style="margin-top:8px;width:100%" onclick="copyPromptManually()">
+            📋 Copy Prompt Thủ Công
+          </button>
+        </div>
+
+        <!-- Transcript Input -->
+        <div>
+          <label class="label">📋 Transcript (Dán kết quả từ Gemini)</label>
+          <textarea id="gemini-transcript-input" class="input"
+            placeholder="Dán transcript từ Gemini vào đây..."
+            style="width:100%;height:200px;resize:vertical;font-family:monospace;font-size:12px;line-height:1.6"></textarea>
+        </div>
+
+        <!-- Format Example -->
+        <div style="background:var(--bg-3);border-radius:8px;padding:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">📌 Định dạng chuẩn:</div>
+          <pre style="font-size:11px;color:var(--text-3);overflow-x:auto;margin:0;line-height:1.5">0:00 - 0:05
+Xin chào, đây là video tiếng Trung.
+
+0:05 - 0:10
+Hôm nay chúng ta sẽ học từ vựng mới.
+
+0:10 - 0:15
+Bạn đã sẵn sàng chưa?</pre>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="padding:16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('modal-gemini-transcript')">❌ Hủy</button>
+        <button class="btn btn-primary" onclick="openGeminiAI()">
+          🚀 Mở Gemini AI
+        </button>
+        <button class="btn btn-primary" style="background:var(--green-light)" onclick="saveGeminiTranscript()">
+          ✅ Lưu & Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- DICTATION PAGE -->
   <div class="page" id="page-dictation">
     <div class="page-header">
@@ -1013,6 +1093,14 @@ Bài 15: Trang 36-37..."
             <button class="btn btn-primary" style="flex:1;background:linear-gradient(135deg,#6B46C1,#4F46E5)"
               id="btn-auto-transcript" onclick="autoExtractTranscript()">
               🤖 Trích transcript tự động (AI)
+            </button>
+            <button class="btn btn-ghost" style="border:1px solid var(--gold);color:var(--gold)"
+              id="btn-manual-script" onclick="openGeminiTranscriptHelper()">
+              ✏️ Tạo script thủ công
+            </button>
+            <button class="btn btn-ghost" style="border:1px solid var(--blue);color:var(--blue);font-size:12px"
+              id="btn-gemini-api" onclick="openAISettings()">
+              🔑 Gemini API
             </button>
             <a id="yt-open-link" href="#" target="_blank" class="btn btn-ghost" style="display:none">🔗 Mở YouTube</a>
           </div>
@@ -1244,35 +1332,231 @@ Bài 15: Trang 36-37..."
     
     // ===== AI SETTINGS FUNCTIONS =====
     function openAISettings() {
-      // Load current API key
+      // Load current API key from localStorage
       const apiKey = localStorage.getItem('gemini-api-key') || '';
-      const apiKeyInput = document.getElementById('gemini-api-key');
+      console.log('📖 Loading API Key from localStorage:', apiKey ? apiKey.substring(0, 10) + '...' : '(empty)');
+      
+      const apiKeyInput = document.getElementById('input-gemini-key');
       if (apiKeyInput) {
         apiKeyInput.value = apiKey;
       }
       
       // Open modal
-      openModal('modal-ai-settings');
+      const modal = document.getElementById('modal-ai-settings');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+        // Focus on input after modal opens
+        setTimeout(() => {
+          if (apiKeyInput) apiKeyInput.focus();
+        }, 100);
+      }
     }
     
     async function saveAISettings() {
-      const apiKey = document.getElementById('gemini-api-key').value.trim();
+      const apiKeyInput = document.getElementById('input-gemini-key');
+      if (!apiKeyInput) {
+        toast('❌ Không tìm thấy input field', 'error');
+        return;
+      }
+      
+      const apiKey = apiKeyInput.value.trim();
       
       if (!apiKey) {
         toast('⚠️ Vui lòng nhập API Key', 'error');
         return;
       }
       
-      // Save to localStorage - dùng cùng key với tất cả JS files
-      localStorage.setItem('gemini-api-key', apiKey);
+      try {
+        // ALWAYS save to localStorage first (most important)
+        localStorage.setItem('gemini-api-key', apiKey);
+        console.log('✅ Saved to localStorage:', apiKey.substring(0, 10) + '...');
+        
+        // Try to save to Supabase if logged in (optional, don't fail if error)
+        if (window.Auth && window.Auth.currentUser) {
+          try {
+            const client = window.DBClient ? window.DBClient.getClient() : null;
+            if (client) {
+              const { error } = await client
+                .from('user_settings')
+                .upsert({
+                  user_id: window.Auth.currentUser.id,
+                  gemini_api_key: apiKey,
+                  updated_at: new Date().toISOString()
+                });
+              
+              if (error) {
+                console.warn('⚠️ Could not save to Supabase:', error.message);
+                // Don't fail - localStorage is enough
+              } else {
+                console.log('✅ Also saved to Supabase');
+              }
+            }
+          } catch (supabaseError) {
+            console.warn('⚠️ Supabase save failed (but localStorage is OK):', supabaseError.message);
+            // Don't fail - localStorage is enough
+          }
+        }
+        
+        toast('✅ Đã lưu API Key', 'success');
+        
+        // Close modal
+        const modal = document.getElementById('modal-ai-settings');
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.remove('open');
+        }
+      } catch (error) {
+        console.error('Error saving API Key:', error);
+        toast('❌ Lỗi lưu API Key: ' + error.message, 'error');
+      }
+    }
+    
+    // ===== GEMINI TRANSCRIPT HELPER =====
+    
+    /**
+     * Open Gemini transcript helper modal
+     */
+    function openGeminiTranscriptHelper() {
+      const ytUrl = document.getElementById('yt-url').value.trim();
       
-      // Save to Supabase if logged in
-      if (Auth && Auth.currentUser) {
-        await Settings.saveSettings({ gemini_api_key: apiKey });
+      if (!ytUrl) {
+        toast('⚠️ Vui lòng nhập YouTube link trước', 'error');
+        return;
       }
       
-      toast('✅ Đã lưu API Key', 'success');
-      closeModal('modal-ai-settings');
+      // Display YouTube link in modal
+      document.getElementById('gemini-yt-link').textContent = ytUrl;
+      
+      // Create and display prompt
+      const prompt = `Tạo transcript của video YouTube này: ${ytUrl}
+
+Yêu cầu:
+1. Xem video YouTube từ link trên
+2. Tạo transcript theo định dạng chuẩn:
+   - Mỗi đoạn có thời gian bắt đầu và kết thúc (mm:ss - mm:ss)
+   - Nội dung transcript dưới mỗi thời gian
+   - Cách nhau một dòng trống
+
+Ví dụ định dạng:
+0:00 - 0:05
+Xin chào, đây là video tiếng Trung.
+
+0:05 - 0:10
+Hôm nay chúng ta sẽ học từ vựng mới.
+
+3. Transcript phải chính xác, đầy đủ, không bỏ sót
+4. Chỉ trả về transcript, không cần giải thích thêm`;
+      
+      document.getElementById('gemini-prompt-display').value = prompt;
+      
+      // Clear previous transcript
+      document.getElementById('gemini-transcript-input').value = '';
+      
+      // Open modal
+      const modal = document.getElementById('modal-gemini-transcript');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+      }
+    }
+    
+    /**
+     * Copy prompt manually
+     */
+    function copyPromptManually() {
+      const prompt = document.getElementById('gemini-prompt-display').value;
+      navigator.clipboard.writeText(prompt).then(() => {
+        toast('✅ Đã copy prompt', 'success');
+      }).catch(() => {
+        toast('❌ Không thể copy. Vui lòng copy thủ công', 'error');
+      });
+    }
+    
+    /**
+     * Copy prompt to clipboard and open Gemini
+     */
+    function openGeminiAI() {
+      const ytUrl = document.getElementById('yt-url').value.trim();
+      
+      if (!ytUrl) {
+        toast('⚠️ Vui lòng nhập YouTube link', 'error');
+        return;
+      }
+      
+      // Create prompt for Gemini
+      const prompt = `Tạo transcript của video YouTube này: ${ytUrl}
+
+Yêu cầu:
+1. Xem video YouTube từ link trên
+2. Tạo transcript theo định dạng chuẩn:
+   - Mỗi đoạn có thời gian bắt đầu và kết thúc (mm:ss - mm:ss)
+   - Nội dung transcript dưới mỗi thời gian
+   - Cách nhau một dòng trống
+
+Ví dụ định dạng:
+0:00 - 0:05
+Xin chào, đây là video tiếng Trung.
+
+0:05 - 0:10
+Hôm nay chúng ta sẽ học từ vựng mới.
+
+3. Transcript phải chính xác, đầy đủ, không bỏ sót
+4. Chỉ trả về transcript, không cần giải thích thêm`;
+
+      // Copy prompt to clipboard
+      navigator.clipboard.writeText(prompt).then(() => {
+        toast('✅ Đã copy prompt. Mở Gemini và paste vào', 'success');
+        
+        // Open Gemini in new tab
+        window.open('https://gemini.google.com', '_blank');
+      }).catch(() => {
+        // Fallback: show prompt in textarea
+        document.getElementById('gemini-transcript-input').value = prompt;
+        toast('⚠️ Không thể copy. Prompt đã được hiển thị bên dưới. Hãy copy thủ công', 'warning');
+      });
+    }
+    
+    /**
+     * Save Gemini transcript to dictation input
+     */
+    function saveGeminiTranscript() {
+      const transcript = document.getElementById('gemini-transcript-input').value.trim();
+      
+      if (!transcript) {
+        toast('⚠️ Vui lòng dán transcript từ Gemini', 'error');
+        return;
+      }
+      
+      try {
+        // Save to transcript input
+        const transcriptInput = document.getElementById('transcript-input');
+        if (transcriptInput) {
+          transcriptInput.value = transcript;
+        }
+        
+        // Save to draft
+        if (window.DB) {
+          window.DB.set('draftDictationTranscript', transcript);
+        }
+        
+        // Close modal
+        const modal = document.getElementById('modal-gemini-transcript');
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.remove('open');
+        }
+        
+        // Focus on transcript input
+        setTimeout(() => {
+          if (transcriptInput) transcriptInput.focus();
+        }, 100);
+        
+        toast('✅ Đã lưu transcript. Bạn có thể bắt đầu luyện nghe!', 'success');
+      } catch (error) {
+        console.error('Error saving transcript:', error);
+        toast('❌ Lỗi lưu transcript: ' + error.message, 'error');
+      }
     }
     
     // ===== YOUTUBE SEARCH WITH API =====
