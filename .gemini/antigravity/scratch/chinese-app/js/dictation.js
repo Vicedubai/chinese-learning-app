@@ -368,7 +368,10 @@ function renderDictationPlaylist() {
   if (!list) return;
   
   // Check and recover playlist data first
-  const playlist = checkAndRecoverPlaylistData();
+  const allItems = checkAndRecoverPlaylistData();
+  
+  // Filter out playlist markers and count real videos
+  const playlist = allItems.filter(p => !p.isPlaylistMarker);
   if (countEl) countEl.textContent = playlist.length;
   
   if (playlist.length === 0) {
@@ -401,7 +404,7 @@ function renderDictationPlaylist() {
     let html = '';
     
     // Render grouped playlists
-    Object.keys(grouped).forEach(playlistName => {
+    Object.keys(grouped).sort().forEach(playlistName => {
       const videos = grouped[playlistName];
       const isCollapsed = localStorage.getItem(`playlist-${playlistName}-collapsed`) === 'true';
       const icon = isCollapsed ? '▶' : '▼';
@@ -413,6 +416,7 @@ function renderDictationPlaylist() {
             <span style="font-size:14px;font-weight:600;color:var(--text-1)">📁 ${playlistName}</span>
             <span class="badge" style="font-size:10px;margin-left:auto">${videos.length} videos</span>
             <button class="btn btn-ghost" onclick="event.stopPropagation();editPlaylistName('${playlistName}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên playlist">✏️</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();deletePlaylist('${playlistName}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa playlist">🗑️</button>
           </div>
           <div class="playlist-videos" id="playlist-${playlistName.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:${isCollapsed ? 'none' : 'block'};margin-left:20px;margin-top:8px">
             ${videos.map(p => renderVideoItem(p, true)).join('')}
@@ -1297,6 +1301,20 @@ function togglePlaylistGroup(playlistName) {
   icon.textContent = isCollapsed ? '▼' : '▶';
 }
 
+function deletePlaylist(playlistName) {
+  if (!confirm(`Xóa playlist "${playlistName}" và tất cả video trong đó?`)) return;
+  
+  // Remove all videos in this playlist
+  State.dictationPlaylist = State.dictationPlaylist.filter(p => p.playlist !== playlistName);
+  State.save();
+  
+  // Remove collapse state
+  localStorage.removeItem(`playlist-${playlistName}-collapsed`);
+  
+  renderDictationPlaylist();
+  toast(`✅ Đã xóa playlist "${playlistName}"`, 'success');
+}
+
 function editPlaylistName(oldName) {
   const newName = prompt('Nhập tên playlist mới:', oldName);
   if (!newName || newName.trim() === '' || newName === oldName) return;
@@ -1459,21 +1477,39 @@ function createNewPlaylist() {
     return;
   }
   
-  if (!State.dictationPlaylists) State.dictationPlaylists = [];
+  // Check if playlist name already exists
+  const playlist = State.dictationPlaylist || [];
+  if (playlist.some(p => p.playlist === name)) {
+    toast('Playlist này đã tồn tại!', 'error');
+    return;
+  }
   
-  const newPlaylist = {
-    id: uid(),
-    name: name,
-    videos: [],
-    createdAt: Date.now()
+  // Create a marker video to represent the playlist
+  const playlistMarker = {
+    id: `playlist_${Date.now()}`,
+    videoId: 'playlist_marker',
+    url: '',
+    title: `📁 ${name}`,
+    transcript: '',
+    totalCount: 0,
+    completedCount: 0,
+    lastIndex: 0,
+    playlist: name,
+    isPlaylistMarker: true
   };
   
-  State.dictationPlaylists.push(newPlaylist);
+  if (!State.dictationPlaylist) State.dictationPlaylist = [];
+  State.dictationPlaylist.push(playlistMarker);
   State.save();
   
   document.getElementById('modal-create-playlist').style.display = 'none';
-  toast(`✅ Đã tạo playlist "${name}"!`, 'success');
+  document.getElementById('new-playlist-name').value = '';
+  
+  // Expand the newly created playlist
+  localStorage.setItem(`playlist-${name}-collapsed`, 'false');
+  
   renderDictationPlaylist();
+  toast(`✅ Đã tạo playlist "${name}"!`, 'success');
 }
 
 function openImportYouTubePlaylistModal() {
