@@ -134,7 +134,7 @@ function updateLastBackupTime() {
   const el = document.getElementById('last-backup-time');
   if (!el) return;
   const ts = DB.get(BACKUP_KEY, 0);
-  el.textContent = ts ? '🕐 ' + new Date(ts).toLocaleString('vi-VN') : 'Chưa có';
+  el.textContent = ts ? '🕐 ' + formatVietnamDate(new Date(ts)) + ' ' + formatVietnamTime(new Date(ts), 'HH:mm') : 'Chưa có';
 }
 
 // ── SETTINGS MODAL ──

@@ -1,6 +1,42 @@
 // ===== CONFIGURATION =====
 window.API_BASE_URL = window.API_BASE_URL || 'https://chinese-learning-app-production.up.railway.app';
 
+// ===== VIETNAM TIMEZONE UTILITIES =====
+// Vietnam timezone is UTC+7
+const VIETNAM_TZ_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
+
+function getVietnamTime(date = new Date()) {
+  // Get UTC time
+  const utcTime = date.getTime();
+  // Add Vietnam timezone offset
+  const vietnamTime = new Date(utcTime + VIETNAM_TZ_OFFSET);
+  return vietnamTime;
+}
+
+function formatVietnamTime(date = new Date(), format = 'HH:mm') {
+  const vietnamDate = getVietnamTime(date);
+  const hours = String(vietnamDate.getUTCHours()).padStart(2, '0');
+  const minutes = String(vietnamDate.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(vietnamDate.getUTCSeconds()).padStart(2, '0');
+  
+  if (format === 'HH:mm') return `${hours}:${minutes}`;
+  if (format === 'HH:mm:ss') return `${hours}:${minutes}:${seconds}`;
+  if (format === 'full') {
+    const day = String(vietnamDate.getUTCDate()).padStart(2, '0');
+    const month = String(vietnamDate.getUTCMonth() + 1).padStart(2, '0');
+    const year = vietnamDate.getUTCFullYear();
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+  return `${hours}:${minutes}`;
+}
+
+function formatVietnamDate(date = new Date()) {
+  const vietnamDate = getVietnamTime(date);
+  const day = String(vietnamDate.getUTCDate()).padStart(2, '0');
+  const month = String(vietnamDate.getUTCMonth() + 1).padStart(2, '0');
+  const year = vietnamDate.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
 
 // ===== STORAGE =====
 const DB = {

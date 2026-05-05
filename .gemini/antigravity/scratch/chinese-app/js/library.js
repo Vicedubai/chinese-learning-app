@@ -1767,8 +1767,8 @@ function renderCachedPDFList() {
           <div style="font-weight:600;font-size:14px;color:var(--gold)">📄 ${file.file_name}</div>
           <div class="text-xs text-muted mt-4">
             Kích thước: ${file.file_size_mb} MB · 
-            Tải lên: ${new Date(file.upload_date).toLocaleDateString('vi-VN')} · 
-            Truy cập: ${new Date(file.last_accessed).toLocaleDateString('vi-VN')}
+            Tải lên: ${formatVietnamDate(new Date(file.upload_date))} · 
+            Truy cập: ${formatVietnamDate(new Date(file.last_accessed))}
           </div>
         </div>
         <div class="flex gap-8">

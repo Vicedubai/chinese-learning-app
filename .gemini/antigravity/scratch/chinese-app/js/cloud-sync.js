@@ -182,7 +182,7 @@ const CloudSync = {
       const forcePull = !silent; // Khi user chủ động nhấn pull → luôn lấy cloud
 
       if (localHasContent && !cloudIsNewer && !forcePull) {
-        console.log(`ℹ️ Local data (${new Date(localSavedAt).toLocaleTimeString()}) mới hơn cloud (${new Date(cloudPushedAt).toLocaleTimeString()}) → giữ nguyên local`);
+        console.log(`ℹ️ Local data (${formatVietnamTime(new Date(localSavedAt), 'HH:mm:ss')}) mới hơn cloud (${formatVietnamTime(new Date(cloudPushedAt), 'HH:mm:ss')}) → giữ nguyên local`);
         return false;
       }
 
@@ -190,8 +190,8 @@ const CloudSync = {
       if (localHasContent && !cloudIsNewer && forcePull) {
         const ok = confirm(
           `⚠️ Dữ liệu LOCAL của bạn MỚI HƠN dữ liệu Cloud!\n\n` +
-          `Local lưu lúc: ${new Date(localSavedAt).toLocaleString()}\n` +
-          `Cloud push lúc: ${new Date(cloudPushedAt).toLocaleString()}\n\n` +
+          `Local lưu lúc: ${formatVietnamDate(new Date(localSavedAt))} ${formatVietnamTime(new Date(localSavedAt), 'HH:mm:ss')}\n` +
+          `Cloud push lúc: ${formatVietnamDate(new Date(cloudPushedAt))} ${formatVietnamTime(new Date(cloudPushedAt), 'HH:mm:ss')}\n\n` +
           `Bạn có chắc muốn GHI ĐÈ local bằng dữ liệu cloud cũ hơn không?\n` +
           `(Nhấn OK = mất dữ liệu local mới hơn, Cancel = giữ nguyên local)`
         );

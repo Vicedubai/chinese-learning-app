@@ -130,8 +130,8 @@ const Admin = {
             </div>
             <div style="font-size:12px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${user.email}</div>
             <div style="font-size:11px;color:var(--text-3);margin-top:4px">
-              Tham gia: ${new Date(user.created_at).toLocaleDateString('vi-VN')}
-              ${user.last_login ? ` • Đăng nhập: ${new Date(user.last_login).toLocaleDateString('vi-VN')}` : ''}
+              Tham gia: ${formatVietnamDate(new Date(user.created_at))}
+              ${user.last_login ? ` • Đăng nhập: ${formatVietnamDate(new Date(user.last_login))}` : ''}
             </div>
           </div>
           <div style="display:flex;gap:8px">
@@ -169,7 +169,7 @@ const Admin = {
       }
 
       logEl.innerHTML = data.map(log => {
-        const time = new Date(log.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const time = formatVietnamTime(new Date(log.created_at), 'HH:mm');
         const userName = log.users?.name || log.users?.email || 'Unknown';
         return `
           <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">

@@ -1013,7 +1013,7 @@ function renderPlaylistManager() {
             <span class="text-xs" style="color:var(--gold)">${p.completedCount || 0}/${p.totalCount || '?'} câu</span>
           </div>
           <div class="text-xs" style="color:var(--text-3);margin-top:4px">
-            Thêm: ${new Date(p.id).toLocaleDateString('vi-VN')}
+            Thêm: ${formatVietnamDate(new Date(p.id))}
           </div>
         </div>
         <div class="flex flex-col gap-4">
