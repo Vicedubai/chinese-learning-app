@@ -454,7 +454,7 @@ function renderDictationPlaylist() {
       const escapedName = playlistName.replace(/'/g, "\\'");
       
       html += `
-        <div class="playlist-group" style="margin-bottom:16px">
+        <div class="playlist-group" style="margin-bottom:16px;flex-shrink:0">
           <div class="playlist-header" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-3);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="togglePlaylistGroup('${escapedName}')">
             <span style="font-size:14px">${icon}</span>
             <span style="font-size:14px;font-weight:600;color:var(--text-1)">📁 ${playlistName}</span>
@@ -472,7 +472,7 @@ function renderDictationPlaylist() {
     // Render loose videos
     if (loose.length > 0) {
       html += `
-        <div class="loose-videos" style="margin-bottom:16px">
+        <div class="loose-videos" style="margin-bottom:16px;flex-shrink:0">
           <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;padding-left:4px">📄 Videos chưa có playlist:</div>
           ${loose.map(p => renderVideoItem(p, false)).join('')}
         </div>
@@ -481,7 +481,7 @@ function renderDictationPlaylist() {
     
     // Add drop zone for creating new playlist
     html += `
-      <div class="playlist-drop-zone" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;margin-top:16px" ondrop="handlePlaylistDrop(event)" ondragover="handlePlaylistDragOver(event)">
+      <div class="playlist-drop-zone" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;margin-top:16px;flex-shrink:0" ondrop="handlePlaylistDrop(event)" ondragover="handlePlaylistDragOver(event)">
         ➕ Kéo video vào đây để tạo playlist mới
       </div>
     `;
@@ -1184,7 +1184,8 @@ function openMergePlaylistModal() {
 
 function renderMergePlaylistList() {
   const list = document.getElementById('merge-playlist-list');
-  const playlist = State.dictationPlaylist || [];
+  // Lọc bỏ các playlist markers, chỉ hiển thị video thật để gộp bài
+  const playlist = (State.dictationPlaylist || []).filter(p => !p.isPlaylistMarker);
   
   if (playlist.length === 0) {
     list.innerHTML = '<div class="text-sm text-muted text-center">Chưa có video nào để gộp.</div>';
