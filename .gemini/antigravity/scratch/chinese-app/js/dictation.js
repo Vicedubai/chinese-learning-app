@@ -1617,7 +1617,23 @@ async function importYouTubePlaylist() {
     const playlistFolderName = playlistName;
     
     // Check if playlist already exists
-    const playlistExists = State.dictationPlaylist.some(p => p.playlist === playlistFolderName && !p.isPlaylistMarker);
+    const playlistExists = State.dictationPlaylist.some(p => p.playlist === playlistFolderName && p.isPlaylistMarker);
+    
+    // Create a marker if it doesn't exist so the folder is permanent
+    if (!playlistExists) {
+      State.dictationPlaylist.push({
+        id: `playlist_${Date.now()}`,
+        videoId: 'playlist_marker',
+        url: '',
+        title: `📁 ${playlistFolderName}`,
+        transcript: '',
+        totalCount: 0,
+        completedCount: 0,
+        lastIndex: 0,
+        playlist: playlistFolderName,
+        isPlaylistMarker: true
+      });
+    }
     
     let addedCount = 0;
     for (const video of videos) {
