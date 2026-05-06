@@ -5,6 +5,21 @@ function checkAndRecoverPlaylistData() {
     let hasCorruption = false;
     let recoveredCount = 0;
     
+    // Migration: Check for old plural data key
+    const oldPluralData = DB.get('dictationPlaylists');
+    if (oldPluralData && Array.isArray(oldPluralData) && oldPluralData.length > 0) {
+      console.log('🔄 Found old data in plural "dictationPlaylists", migrating...');
+      oldPluralData.forEach(p => {
+        if (p && p.id && !playlist.find(existing => existing.id === p.id)) {
+          playlist.push(p);
+          recoveredCount++;
+        }
+      });
+      // Clear old key to avoid repeated migration
+      localStorage.removeItem('dictationPlaylists');
+      hasCorruption = true; // Trigger save
+    }
+    
     // Check for corrupted items
     const validPlaylist = playlist.filter(item => {
       if (!item || typeof item !== 'object' || !item.id) {
@@ -1637,20 +1652,14 @@ async function importYouTubePlaylist() {
     toast(`❌ ${e.message}`, 'error');
   }
 }
-    console.error('Import playlist error:', e);
-    document.getElementById('yt-import-icon').textContent = '❌';
-    document.getElementById('yt-import-msg').textContent = `Lỗi: ${e.message}`;
-    toast(`❌ ${e.message}`, 'error');
-  }
-}
 
-function openRenameVideoModal(playlistId, videoId) {
-  currentRenamingPlaylistId = playlistId;
-  const playlist = State.dictationPlaylists?.find(p => p.id === playlistId);
-  const video = playlist?.videos?.find(v => v.id === videoId);
-  
+let currentRenamingVideoId = null;
+
+function openRenameVideoModal(videoId) {
+  const video = State.dictationPlaylist.find(v => v.id == videoId);
   if (!video) return;
   
+  currentRenamingVideoId = videoId;
   document.getElementById('rename-video-input').value = video.title;
   document.getElementById('modal-rename-video').style.display = 'flex';
   document.getElementById('rename-video-input').focus();
@@ -1663,20 +1672,18 @@ function saveRenamedVideo() {
     return;
   }
   
-  // Find and update video
-  const playlist = State.dictationPlaylists?.find(p => p.id === currentRenamingPlaylistId);
-  if (!playlist) return;
+  const video = State.dictationPlaylist.find(v => v.id == currentRenamingVideoId);
+  if (video) {
+    video.title = newName;
+    State.save();
+    toast('✅ Đã đổi tên video!', 'success');
+    renderDictationPlaylist();
+  }
   
-  // This would need the videoId to be stored, for now we'll update the current one
-  // In a real implementation, you'd pass videoId as parameter
-  
-  State.save();
   document.getElementById('modal-rename-video').style.display = 'none';
-  toast('✅ Đã đổi tên video!', 'success');
-  renderDictationPlaylist();
 }
 
-function addVideoToPlaylist(playlistId) {
+function addVideoToPlaylist(playlistName) {
   const url = document.getElementById('yt-url').value.trim();
   const transcript = document.getElementById('transcript-input').value.trim();
   
@@ -1685,11 +1692,6 @@ function addVideoToPlaylist(playlistId) {
     return;
   }
   
-  if (!State.dictationPlaylists) State.dictationPlaylists = [];
-  
-  const playlist = State.dictationPlaylists.find(p => p.id === playlistId);
-  if (!playlist) return;
-  
   const videoId = extractYTId(url);
   if (!videoId) {
     toast('Link YouTube không hợp lệ', 'error');
@@ -1697,18 +1699,22 @@ function addVideoToPlaylist(playlistId) {
   }
   
   const video = {
-    id: uid(),
+    id: Date.now(),
     url: url,
     videoId: videoId,
-    title: document.getElementById('yt-url').value, // Will be updated with actual title
+    title: url, // Title will be updated if it starts
     transcript: transcript,
-    addedAt: Date.now()
+    playlist: playlistName,
+    completedCount: 0,
+    totalCount: 0,
+    lastIndex: 0
   };
   
-  playlist.videos.push(video);
+  if (!State.dictationPlaylist) State.dictationPlaylist = [];
+  State.dictationPlaylist.push(video);
   State.save();
   
-  toast('✅ Đã thêm video vào playlist!', 'success');
+  toast(`✅ Đã thêm video vào playlist "${playlistName}"!`, 'success');
   renderDictationPlaylist();
 }
 

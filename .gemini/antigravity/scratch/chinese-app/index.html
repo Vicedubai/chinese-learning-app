@@ -2418,7 +2418,7 @@ Ví dụ định dạng:
   <div class="modal" style="max-width:500px">
     <div class="modal-header">
       <span class="modal-title">➕ Tạo Playlist Mới</span>
-      <button class="modal-close" onclick="this.closest('.modal-overlay').style.display='none'">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-create-playlist')">✕</button>
     </div>
     <div style="padding:20px">
       <div style="margin-bottom:16px">
@@ -2429,7 +2429,7 @@ Ví dụ định dạng:
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="createNewPlaylist()">✅ Tạo</button>
         <button class="btn btn-ghost" style="flex:1"
-          onclick="document.getElementById('modal-create-playlist').style.display='none'">Hủy</button>
+          onclick="closeModal('modal-create-playlist')">Hủy</button>
       </div>
     </div>
   </div>
@@ -2440,7 +2440,7 @@ Ví dụ định dạng:
   <div class="modal" style="max-width:600px">
     <div class="modal-header">
       <span class="modal-title">📺 Nhập Playlist YouTube</span>
-      <button class="modal-close" onclick="this.closest('.modal-overlay').style.display='none'">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-import-yt-playlist')">✕</button>
     </div>
     <div style="padding:20px">
       <div style="margin-bottom:16px">
@@ -2465,7 +2465,7 @@ Ví dụ định dạng:
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="importYouTubePlaylist()">📥 Nhập</button>
         <button class="btn btn-ghost" style="flex:1"
-          onclick="document.getElementById('modal-import-yt-playlist').style.display='none'">Hủy</button>
+          onclick="closeModal('modal-import-yt-playlist')">Hủy</button>
       </div>
     </div>
   </div>
@@ -2476,7 +2476,7 @@ Ví dụ định dạng:
   <div class="modal" style="max-width:500px">
     <div class="modal-header">
       <span class="modal-title">✏️ Đổi Tên Video</span>
-      <button class="modal-close" onclick="this.closest('.modal-overlay').style.display='none'">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-rename-video')">✕</button>
     </div>
     <div style="padding:20px">
       <div style="margin-bottom:16px">
@@ -2487,7 +2487,7 @@ Ví dụ định dạng:
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="saveRenamedVideo()">✅ Lưu</button>
         <button class="btn btn-ghost" style="flex:1"
-          onclick="document.getElementById('modal-rename-video').style.display='none'">Hủy</button>
+          onclick="closeModal('modal-rename-video')">Hủy</button>
       </div>
     </div>
   </div>
