@@ -10,7 +10,18 @@ function checkAndRecoverPlaylistData() {
     if (oldPluralData && Array.isArray(oldPluralData) && oldPluralData.length > 0) {
       console.log('🔄 Found old data in plural "dictationPlaylists", migrating...');
       oldPluralData.forEach(p => {
-        if (p && p.id && !playlist.find(existing => existing.id === p.id)) {
+        // Handle folder-style playlist object (hierarchical)
+        if (p && p.videos && Array.isArray(p.videos)) {
+          p.videos.forEach(video => {
+            if (video && video.id && !playlist.find(existing => existing.id == video.id)) {
+              video.playlist = p.title || 'Migrated Playlist';
+              playlist.push(video);
+              recoveredCount++;
+            }
+          });
+        } 
+        // Handle flat video item
+        else if (p && p.id && !playlist.find(existing => existing.id == p.id)) {
           playlist.push(p);
           recoveredCount++;
         }
@@ -79,6 +90,8 @@ let dictScores = [];
 let ytPlayer = null;
 let ytApiLoaded = false;
 let dictHistory = DB.get('dictation-history', []);
+let selectedPlaylistItems = new Set();
+let draggedItem = null;
 
 // Load YouTube IFrame API once
 (function loadYTApi() {
@@ -334,7 +347,7 @@ function startDictationSession() {
   const videoId = extractYTId(urlInput);
   if (videoId) {
     if (!State.dictationPlaylist) State.dictationPlaylist = [];
-    let existing = State.dictationPlaylist.find(p => p.videoId === videoId);
+    let existing = State.dictationPlaylist.find(p => p.videoId == videoId);
     if (!existing) {
       existing = {
         id: Date.now(),
@@ -367,7 +380,7 @@ function updatePlaylistProgress() {
   const videoId = extractYTId(urlInput);
   if (!videoId) return;
   
-  const item = State.dictationPlaylist?.find(p => p.videoId === videoId);
+  const item = State.dictationPlaylist?.find(p => p.videoId == videoId);
   if (item) {
     item.lastIndex = dictIdx;
     item.completedCount = dictScores.length;
@@ -515,7 +528,7 @@ function renderVideoItem(p, inPlaylist) {
 }
 
 function loadDictationFromPlaylist(id) {
-  const p = State.dictationPlaylist.find(x => x.id === id);
+  const p = State.dictationPlaylist.find(x => x.id == id);
   if (!p) return;
   document.getElementById('yt-url').value = p.url;
   document.getElementById('transcript-input').value = p.transcript;
@@ -526,14 +539,14 @@ function loadDictationFromPlaylist(id) {
 
 function deleteDictationPlaylist(id) {
   if (!confirm('Xóa bài luyện này khỏi Playlist?')) return;
-  State.dictationPlaylist = State.dictationPlaylist.filter(x => x.id !== id);
+  State.dictationPlaylist = State.dictationPlaylist.filter(x => x.id != id);
   State.save();
   renderDictationPlaylist();
 }
 
 // ===== EDIT DICTATION TITLE - INLINE EDITING =====
 function editDictationTitle(id) {
-  const item = State.dictationPlaylist.find(x => x.id === id);
+  const item = State.dictationPlaylist.find(x => x.id == id);
   if (!item) return;
   
   const titleEl = document.getElementById(`dict-title-${id}`);
@@ -1016,7 +1029,7 @@ function renderPlaylistManager() {
   list.innerHTML = playlist.map(p => {
     const thumb = `https://img.youtube.com/vi/${p.videoId}/mqdefault.jpg`;
     const progress = p.totalCount ? Math.round((p.completedCount || 0) / p.totalCount * 100) : 0;
-    const isSelected = selectedPlaylistItems.has(p.id);
+    const isSelected = selectedPlaylistItems.has(String(p.id)) || selectedPlaylistItems.has(Number(p.id));
     
     return `
       <div class="playlist-manager-item" style="display:flex;gap:12px;padding:12px;border-radius:8px;background:var(--bg-2);border:1px solid ${isSelected ? 'var(--blue)' : 'var(--border)'};margin-bottom:8px">
@@ -1046,10 +1059,11 @@ function renderPlaylistManager() {
 }
 
 function togglePlaylistSelection(id) {
-  if (selectedPlaylistItems.has(id)) {
-    selectedPlaylistItems.delete(id);
+  if (selectedPlaylistItems.has(String(id))) {
+    selectedPlaylistItems.delete(String(id));
+    selectedPlaylistItems.delete(Number(id));
   } else {
-    selectedPlaylistItems.add(id);
+    selectedPlaylistItems.add(String(id));
   }
   renderPlaylistManager();
 }
@@ -1057,7 +1071,7 @@ function togglePlaylistSelection(id) {
 function selectAllPlaylist() {
   const playlist = State.dictationPlaylist || [];
   selectedPlaylistItems.clear();
-  playlist.forEach(p => selectedPlaylistItems.add(p.id));
+  playlist.forEach(p => selectedPlaylistItems.add(String(p.id)));
   renderPlaylistManager();
 }
 
@@ -1074,7 +1088,7 @@ function deleteSelectedPlaylist() {
   
   if (!confirm(`Xóa ${selectedPlaylistItems.size} video đã chọn?`)) return;
   
-  State.dictationPlaylist = State.dictationPlaylist.filter(p => !selectedPlaylistItems.has(p.id));
+  State.dictationPlaylist = State.dictationPlaylist.filter(p => !selectedPlaylistItems.has(String(p.id)));
   selectedPlaylistItems.clear();
   State.save();
   renderPlaylistManager();
@@ -1083,7 +1097,7 @@ function deleteSelectedPlaylist() {
 }
 
 function duplicatePlaylistItem(id) {
-  const item = State.dictationPlaylist.find(p => p.id === id);
+  const item = State.dictationPlaylist.find(p => p.id == id);
   if (!item) return;
   
   const newItem = {
@@ -1166,7 +1180,7 @@ function executeMergePlaylist() {
   }
   
   const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-  const selectedItems = State.dictationPlaylist.filter(p => selectedIds.includes(p.id));
+  const selectedItems = State.dictationPlaylist.filter(p => selectedIds.includes(String(p.id)));
   
   // Create merged transcript
   let mergedTranscript = '';
@@ -1194,7 +1208,7 @@ function executeMergePlaylist() {
   };
   
   // Add merged item and remove originals
-  State.dictationPlaylist = State.dictationPlaylist.filter(p => !selectedIds.includes(p.id));
+  State.dictationPlaylist = State.dictationPlaylist.filter(p => !selectedIds.includes(String(p.id)));
   State.dictationPlaylist.push(mergedItem);
   
   State.save();
@@ -1288,7 +1302,7 @@ function savePlaylistOrder() {
   const reorderedPlaylist = [];
   
   newOrder.forEach(id => {
-    const item = playlist.find(p => p.id === id);
+    const item = playlist.find(p => p.id == id);
     if (item) reorderedPlaylist.push(item);
   });
   
@@ -1356,7 +1370,7 @@ function editPlaylistName(oldName) {
 }
 
 function assignToPlaylist(videoId) {
-  const video = State.dictationPlaylist.find(v => v.id === videoId);
+  const video = State.dictationPlaylist.find(v => v.id == videoId);
   if (!video) return;
   
   // Get existing playlist names
@@ -1391,7 +1405,7 @@ function assignToPlaylist(videoId) {
 }
 
 function removeFromPlaylist(videoId) {
-  const video = State.dictationPlaylist.find(v => v.id === videoId);
+  const video = State.dictationPlaylist.find(v => v.id == videoId);
   if (!video) return;
   
   if (!confirm(`Rời video "${video.title}" khỏi playlist "${video.playlist}"?`)) return;
@@ -1432,7 +1446,7 @@ function handlePlaylistDrop(event) {
   const playlistName = prompt('Nhập tên playlist mới:');
   if (!playlistName || playlistName.trim() === '') return;
   
-  const video = State.dictationPlaylist.find(v => v.id === draggedVideoId);
+  const video = State.dictationPlaylist.find(v => v.id == draggedVideoId);
   if (video) {
     video.playlist = playlistName.trim();
     State.save();
@@ -1460,7 +1474,7 @@ function addPlaylistDragHandlers() {
       if (!draggedVideoId) return;
       
       const playlistName = header.querySelector('span:nth-child(2)').textContent.replace('📁 ', '');
-      const video = State.dictationPlaylist.find(v => v.id === draggedVideoId);
+      const video = State.dictationPlaylist.find(v => v.id == draggedVideoId);
       
       if (video) {
         video.playlist = playlistName;
