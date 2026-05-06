@@ -79,7 +79,10 @@ const CloudSync = {
         transcript: p.transcript || '',
         totalCount: p.totalCount || 0,
         completedCount: p.completedCount || 0,
-        order: p.order ?? 0
+        lastIndex: p.lastIndex || 0,
+        order: p.order ?? 0,
+        playlist: p.playlist || null,
+        isPlaylistMarker: p.isPlaylistMarker || false
       }));
 
       const payload = {

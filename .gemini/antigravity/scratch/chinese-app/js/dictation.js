@@ -398,21 +398,21 @@ function renderDictationPlaylist() {
   // Check and recover playlist data first
   const allItems = checkAndRecoverPlaylistData();
   
-  // Filter out playlist markers and count real videos
-  const playlist = allItems.filter(p => !p.isPlaylistMarker);
-  if (countEl) countEl.textContent = playlist.length;
+  // Count real videos (not markers) for the badge
+  const realVideos = allItems.filter(p => !p.isPlaylistMarker);
+  if (countEl) countEl.textContent = realVideos.length;
   
-  if (playlist.length === 0) {
+  if (allItems.length === 0) {
     list.innerHTML = '<div class="text-sm text-muted text-center mt-24">Chưa có bài luyện nào.</div>';
     return;
   }
   
   try {
-    // Group videos by playlist
+    // Group videos by playlist - include markers for empty playlist folders
     const grouped = {};
     const loose = [];
     
-    playlist.forEach(p => {
+    allItems.forEach(p => {
       // Ensure p is a valid object
       if (!p || typeof p !== 'object') {
         console.warn('Invalid playlist item:', p);
@@ -423,8 +423,11 @@ function renderDictationPlaylist() {
         if (!grouped[p.playlist]) {
           grouped[p.playlist] = [];
         }
-        grouped[p.playlist].push(p);
-      } else {
+        // Only add real videos (not markers) to the group's video list
+        if (!p.isPlaylistMarker) {
+          grouped[p.playlist].push(p);
+        }
+      } else if (!p.isPlaylistMarker) {
         loose.push(p);
       }
     });
@@ -436,18 +439,19 @@ function renderDictationPlaylist() {
       const videos = grouped[playlistName];
       const isCollapsed = localStorage.getItem(`playlist-${playlistName}-collapsed`) === 'true';
       const icon = isCollapsed ? '▶' : '▼';
+      const escapedName = playlistName.replace(/'/g, "\\'");
       
       html += `
         <div class="playlist-group" style="margin-bottom:16px">
-          <div class="playlist-header" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-3);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="togglePlaylistGroup('${playlistName}')">
+          <div class="playlist-header" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-3);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="togglePlaylistGroup('${escapedName}')">
             <span style="font-size:14px">${icon}</span>
             <span style="font-size:14px;font-weight:600;color:var(--text-1)">📁 ${playlistName}</span>
             <span class="badge" style="font-size:10px;margin-left:auto">${videos.length} videos</span>
-            <button class="btn btn-ghost" onclick="event.stopPropagation();editPlaylistName('${playlistName}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên playlist">✏️</button>
-            <button class="btn btn-ghost" onclick="event.stopPropagation();deletePlaylist('${playlistName}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa playlist">🗑️</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();editPlaylistName('${escapedName}')" style="color:var(--gold);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Đổi tên playlist">✏️</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();deletePlaylist('${escapedName}')" style="color:var(--red);padding:2px 4px;font-size:10px;min-height:0;height:auto" title="Xóa playlist">🗑️</button>
           </div>
           <div class="playlist-videos" id="playlist-${playlistName.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:${isCollapsed ? 'none' : 'block'};margin-left:20px;margin-top:8px">
-            ${videos.map(p => renderVideoItem(p, true)).join('')}
+            ${videos.length > 0 ? videos.map(p => renderVideoItem(p, true)).join('') : '<div class="text-sm text-muted" style="padding:8px">Playlist trống - kéo video vào đây hoặc nhập từ YouTube</div>'}
           </div>
         </div>
       `;
