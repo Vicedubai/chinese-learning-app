@@ -374,6 +374,9 @@ function renderDictationPlaylist() {
   const playlist = allItems.filter(p => !p.isPlaylistMarker);
   if (countEl) countEl.textContent = playlist.length;
   
+  // Store full playlist for filtering
+  window.fullPlaylistData = playlist;
+  
   if (playlist.length === 0) {
     list.innerHTML = '<div class="text-sm text-muted text-center mt-24">Chưa có bài luyện nào.</div>';
     return;
@@ -947,6 +950,86 @@ let selectedPlaylistItems = new Set();
 let draggedItem = null;
 
 // ===== PLAYLIST COLLAPSE/EXPAND =====
+function filterPlaylistVideos(searchTerm) {
+  const list = document.getElementById('dictation-playlist-list');
+  if (!list) return;
+  
+  const searchLower = searchTerm.toLowerCase().trim();
+  
+  // If search is empty, render full playlist
+  if (!searchLower) {
+    renderDictationPlaylist();
+    return;
+  }
+  
+  try {
+    const playlist = window.fullPlaylistData || [];
+    
+    // Filter videos by title
+    const filteredVideos = playlist.filter(p => 
+      p.title && p.title.toLowerCase().includes(searchLower)
+    );
+    
+    if (filteredVideos.length === 0) {
+      list.innerHTML = '<div class="text-sm text-muted text-center mt-24">Không tìm thấy video nào.</div>';
+      return;
+    }
+    
+    // Group filtered videos by playlist
+    const grouped = {};
+    const loose = [];
+    
+    filteredVideos.forEach(p => {
+      if (p.playlist && typeof p.playlist === 'string' && p.playlist.trim()) {
+        if (!grouped[p.playlist]) {
+          grouped[p.playlist] = [];
+        }
+        grouped[p.playlist].push(p);
+      } else {
+        loose.push(p);
+      }
+    });
+    
+    let html = '';
+    
+    // Render grouped playlists with filtered videos
+    Object.keys(grouped).sort().forEach(playlistName => {
+      const videos = grouped[playlistName];
+      const icon = '▼'; // Always show expanded in search results
+      
+      html += `
+        <div class="playlist-group" style="margin-bottom:16px">
+          <div class="playlist-header" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-3);border-radius:8px;cursor:pointer;border:1px solid var(--border)">
+            <span style="font-size:14px">${icon}</span>
+            <span style="font-size:14px;font-weight:600;color:var(--text-1)">📁 ${playlistName}</span>
+            <span class="badge" style="font-size:10px;margin-left:auto">${videos.length} videos</span>
+          </div>
+          <div class="playlist-videos" style="display:block;margin-left:20px;margin-top:8px">
+            ${videos.map(p => renderVideoItem(p, true)).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    // Render loose videos
+    if (loose.length > 0) {
+      html += `
+        <div class="loose-videos" style="margin-bottom:16px">
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;padding-left:4px">📄 Videos chưa có playlist:</div>
+          ${loose.map(p => renderVideoItem(p, false)).join('')}
+        </div>
+      `;
+    }
+    
+    list.innerHTML = html;
+    initializePlaylistDragDrop();
+    
+  } catch (error) {
+    console.error('Error filtering playlist:', error);
+    list.innerHTML = '<div class="text-sm text-red text-center mt-24">Lỗi tìm kiếm.</div>';
+  }
+}
+
 function togglePlaylistCollapse() {
   const playlistList = document.getElementById('dictation-playlist-list');
   const collapseIcon = document.getElementById('playlist-collapse-icon');
