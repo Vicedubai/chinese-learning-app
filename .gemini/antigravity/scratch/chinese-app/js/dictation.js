@@ -971,8 +971,7 @@ function drawRadar(scores, labels) {
 // ===== PLAYLIST MANAGEMENT =====
 
 let currentRenamingPlaylistId = null;
-let selectedPlaylistItems = new Set();
-let draggedItem = null;
+// Note: selectedPlaylistItems and draggedItem are declared at the top of this file
 
 // ===== PLAYLIST COLLAPSE/EXPAND =====
 function togglePlaylistCollapse() {
