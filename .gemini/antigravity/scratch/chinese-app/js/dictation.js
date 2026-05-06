@@ -47,6 +47,18 @@ function checkAndRecoverPlaylistData() {
         }
       }
       
+      // Recover corrupted playlist markers
+      if (item.videoId === 'playlist_marker') {
+        if (!item.isPlaylistMarker) {
+          item.isPlaylistMarker = true;
+          recoveredCount++;
+        }
+        if (!item.playlist && item.title) {
+          item.playlist = item.title.replace('📁 ', '').trim();
+          recoveredCount++;
+        }
+      }
+      
       if (!item.title) {
         item.title = `Video ${item.id}`;
         recoveredCount++;
