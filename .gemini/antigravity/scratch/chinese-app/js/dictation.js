@@ -1001,6 +1001,7 @@ function togglePlaylistCollapse() {
   if (isCollapsed) {
     // Expand
     playlistList.style.display = 'flex';
+    playlistList.style.flexDirection = 'column';
     collapseIcon.textContent = '▼';
     localStorage.setItem('playlist-collapsed', 'false');
   } else {
@@ -1008,6 +1009,25 @@ function togglePlaylistCollapse() {
     playlistList.style.display = 'none';
     collapseIcon.textContent = '▶';
     localStorage.setItem('playlist-collapsed', 'true');
+  }
+}
+
+function togglePlaylistGroup(playlistName) {
+  const escapedName = playlistName.replace(/[^a-zA-Z0-9]/g, '_');
+  const videosContainer = document.getElementById(`playlist-${escapedName}`);
+  if (!videosContainer) return;
+  
+  const isCollapsed = videosContainer.style.display === 'none';
+  const headerIcon = videosContainer.previousElementSibling.querySelector('span');
+  
+  if (isCollapsed) {
+    videosContainer.style.display = 'block';
+    if (headerIcon) headerIcon.textContent = '▼';
+    localStorage.setItem(`playlist-${playlistName}-collapsed`, 'false');
+  } else {
+    videosContainer.style.display = 'none';
+    if (headerIcon) headerIcon.textContent = '▶';
+    localStorage.setItem(`playlist-${playlistName}-collapsed`, 'true');
   }
 }
 
