@@ -1578,8 +1578,14 @@ async function importYouTubePlaylist() {
     
     document.getElementById('yt-import-msg').textContent = `Đã tìm thấy ${videos.length} video. Đang tạo playlist...`;
     
-    // Create dictation items for each video
+    // Initialize playlist array
     if (!State.dictationPlaylist) State.dictationPlaylist = [];
+    
+    // Create playlist folder first
+    const playlistFolderName = playlistName;
+    
+    // Check if playlist already exists
+    const playlistExists = State.dictationPlaylist.some(p => p.playlist === playlistFolderName && !p.isPlaylistMarker);
     
     let addedCount = 0;
     for (const video of videos) {
@@ -1591,16 +1597,17 @@ async function importYouTubePlaylist() {
       const exists = State.dictationPlaylist.find(p => p.videoId === videoId);
       if (exists) continue;
       
-      // Add to playlist
+      // Add to playlist with playlist name
       State.dictationPlaylist.push({
-        id: uid(),
+        id: Date.now() + Math.random(),
         videoId: videoId,
         url: videoUrl,
-        title: `${playlistName} - ${videoTitle}`,
+        title: videoTitle,
         transcript: '', // User will add transcript later
         totalCount: 0,
         completedCount: 0,
-        order: State.dictationPlaylist.length
+        lastIndex: 0,
+        playlist: playlistFolderName  // Assign to playlist folder
       });
       
       addedCount++;
@@ -1613,11 +1620,23 @@ async function importYouTubePlaylist() {
     
     setTimeout(() => {
       document.getElementById('modal-import-yt-playlist').style.display = 'none';
+      document.getElementById('yt-playlist-url').value = '';
+      document.getElementById('yt-playlist-name').value = '';
+      
+      // Expand the newly imported playlist
+      localStorage.setItem(`playlist-${playlistFolderName}-collapsed`, 'false');
+      
       renderDictationPlaylist();
       toast(`✅ Đã thêm ${addedCount} video từ YouTube playlist!`, 'success');
     }, 1500);
     
   } catch (e) {
+    console.error('Import playlist error:', e);
+    document.getElementById('yt-import-icon').textContent = '❌';
+    document.getElementById('yt-import-msg').textContent = `Lỗi: ${e.message}`;
+    toast(`❌ ${e.message}`, 'error');
+  }
+}
     console.error('Import playlist error:', e);
     document.getElementById('yt-import-icon').textContent = '❌';
     document.getElementById('yt-import-msg').textContent = `Lỗi: ${e.message}`;
