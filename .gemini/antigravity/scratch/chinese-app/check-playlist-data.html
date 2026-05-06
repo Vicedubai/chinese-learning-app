@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm Tra Dữ Liệu Playlist</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    h1 {
+      color: #f0b429;
+      border-bottom: 2px solid #f0b429;
+      padding-bottom: 10px;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+    .stat {
+      display: inline-block;
+      background: #3a3a3a;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 6px;
+      border-left: 4px solid #f0b429;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f0b429;
+    }
+    .video-item {
+      background: #333;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border-left: 3px solid #4a9eff;
+    }
+    .video-title {
+      font-weight: bold;
+      color: #4a9eff;
+      margin-bottom: 5px;
+    }
+    .video-info {
+      font-size: 12px;
+      color: #999;
+    }
+    .error {
+      background: #c0392b;
+      color: white;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    .success {
+      background: #27ae60;
+      color: white;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    button {
+      background: #f0b429;
+      color: #1a1a1a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button:hover {
+      background: #ffcc00;
+    }
+    .danger {
+      background: #c0392b;
+      color: white;
+    }
+    .danger:hover {
+      background: #e74c3c;
+    }
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      border: 1px solid #3a3a3a;
+    }
+    .playlist-group {
+      background: #2a2a2a;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border-left: 4px solid #9b59b6;
+    }
+    .playlist-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #9b59b6;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Kiểm Tra Dữ Liệu Playlist</h1>
+  
+  <div class="section">
+    <h2>📊 Thống Kê</h2>
+    <div id="stats"></div>
+  </div>
+
+  <div class="section">
+    <h2>🎬 Danh Sách Video</h2>
+    <div id="videos"></div>
+  </div>
+
+  <div class="section">
+    <h2>📁 Playlist Groups</h2>
+    <div id="playlists"></div>
+  </div>
+
+  <div class="section">
+    <h2>🛠️ Công Cụ</h2>
+    <button onclick="exportData()">💾 Export Dữ Liệu</button>
+    <button onclick="copyToClipboard()">📋 Copy JSON</button>
+    <button onclick="showRawData()">🔍 Xem Raw Data</button>
+    <button class="danger" onclick="clearData()">🗑️ Xóa Tất Cả (Nguy hiểm!)</button>
+  </div>
+
+  <div class="section" id="raw-data" style="display:none">
+    <h2>📄 Raw Data</h2>
+    <pre id="raw-json"></pre>
+  </div>
+
+  <script>
+    function loadData() {
+      try {
+        const data = localStorage.getItem('dictationPlaylist');
+        
+        if (!data) {
+          document.getElementById('stats').innerHTML = '<div class="error">❌ Không tìm thấy dữ liệu playlist trong localStorage!</div>';
+          return;
+        }
+
+        const playlist = JSON.parse(data);
+        
+        // Stats
+        const totalVideos = playlist.length;
+        const withPlaylist = playlist.filter(v => v.playlist && !v.isPlaylistMarker).length;
+        const withoutPlaylist = playlist.filter(v => !v.playlist && !v.isPlaylistMarker).length;
+        const markers = playlist.filter(v => v.isPlaylistMarker).length;
+        const totalSentences = playlist.reduce((sum, v) => sum + (v.totalCount || 0), 0);
+        const completedSentences = playlist.reduce((sum, v) => sum + (v.completedCount || 0), 0);
+        
+        document.getElementById('stats').innerHTML = `
+          <div class="stat">
+            <div class="stat-label">Tổng Video</div>
+            <div class="stat-value">${totalVideos}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Có Playlist</div>
+            <div class="stat-value">${withPlaylist}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Chưa Có Playlist</div>
+            <div class="stat-value">${withoutPlaylist}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Playlist Markers</div>
+            <div class="stat-value">${markers}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Tổng Câu</div>
+            <div class="stat-value">${totalSentences}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Đã Hoàn Thành</div>
+            <div class="stat-value">${completedSentences}</div>
+          </div>
+        `;
+
+        // Videos
+        const videosHtml = playlist
+          .filter(v => !v.isPlaylistMarker)
+          .map((v, index) => {
+            const progress = v.totalCount ? Math.round((v.completedCount || 0) / v.totalCount * 100) : 0;
+            return `
+              <div class="video-item">
+                <div class="video-title">${index + 1}. ${v.title || 'No Title'}</div>
+                <div class="video-info">
+                  📺 Video ID: ${v.videoId || 'N/A'} | 
+                  🆔 ID: ${v.id || 'N/A'} | 
+                  📁 Playlist: ${v.playlist || 'Chưa có'} | 
+                  📊 Progress: ${progress}% (${v.completedCount || 0}/${v.totalCount || 0})
+                </div>
+              </div>
+            `;
+          }).join('');
+        
+        document.getElementById('videos').innerHTML = videosHtml || '<div class="error">Không có video nào</div>';
+
+        // Playlists
+        const grouped = {};
+        playlist.filter(v => !v.isPlaylistMarker && v.playlist).forEach(v => {
+          if (!grouped[v.playlist]) grouped[v.playlist] = [];
+          grouped[v.playlist].push(v);
+        });
+
+        const playlistsHtml = Object.keys(grouped).sort().map(name => {
+          const videos = grouped[name];
+          const totalCount = videos.reduce((sum, v) => sum + (v.totalCount || 0), 0);
+          const completedCount = videos.reduce((sum, v) => sum + (v.completedCount || 0), 0);
+          const progress = totalCount ? Math.round(completedCount / totalCount * 100) : 0;
+          
+          return `
+            <div class="playlist-group">
+              <div class="playlist-name">📁 ${name} (${videos.length} videos)</div>
+              <div class="video-info">
+                📊 Progress: ${progress}% | 
+                ✅ Completed: ${completedCount}/${totalCount} câu
+              </div>
+              <div style="margin-top:10px">
+                ${videos.map(v => `<div style="padding:5px;color:#999">• ${v.title}</div>`).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('playlists').innerHTML = playlistsHtml || '<div class="error">Không có playlist nào</div>';
+
+      } catch (error) {
+        document.getElementById('stats').innerHTML = `<div class="error">❌ Lỗi: ${error.message}</div>`;
+        console.error(error);
+      }
+    }
+
+    function exportData() {
+      const data = localStorage.getItem('dictationPlaylist');
+      if (!data) {
+        alert('Không có dữ liệu để export!');
+        return;
+      }
+
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `playlist-backup-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert('✅ Đã tải xuống file backup!');
+    }
+
+    function copyToClipboard() {
+      const data = localStorage.getItem('dictationPlaylist');
+      if (!data) {
+        alert('Không có dữ liệu để copy!');
+        return;
+      }
+
+      navigator.clipboard.writeText(data).then(() => {
+        alert('✅ Đã copy JSON vào clipboard!');
+      }).catch(err => {
+        alert('❌ Lỗi copy: ' + err.message);
+      });
+    }
+
+    function showRawData() {
+      const section = document.getElementById('raw-data');
+      const pre = document.getElementById('raw-json');
+      
+      if (section.style.display === 'none') {
+        const data = localStorage.getItem('dictationPlaylist');
+        if (data) {
+          pre.textContent = JSON.stringify(JSON.parse(data), null, 2);
+          section.style.display = 'block';
+        }
+      } else {
+        section.style.display = 'none';
+      }
+    }
+
+    function clearData() {
+      if (!confirm('⚠️ BẠN CHẮC CHẮN MUỐN XÓA TẤT CẢ DỮ LIỆU PLAYLIST?\n\nThao tác này KHÔNG THỂ HOÀN TÁC!')) {
+        return;
+      }
+
+      if (!confirm('⚠️ LẦN CUỐI: Xóa tất cả dữ liệu playlist?')) {
+        return;
+      }
+
+      localStorage.removeItem('dictationPlaylist');
+      alert('✅ Đã xóa tất cả dữ liệu playlist!');
+      location.reload();
+    }
+
+    // Load data on page load
+    loadData();
+  </script>
+</body>
+</html>

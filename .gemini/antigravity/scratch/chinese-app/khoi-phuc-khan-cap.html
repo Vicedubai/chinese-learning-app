@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚨 Khôi Phục Khẩn Cấp Playlist</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    h1 { color: #e74c3c; }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+    .success { background: #27ae60; color: white; padding: 15px; border-radius: 6px; margin: 10px 0; }
+    .error { background: #c0392b; color: white; padding: 15px; border-radius: 6px; margin: 10px 0; }
+    .warning { background: #f39c12; color: white; padding: 15px; border-radius: 6px; margin: 10px 0; }
+    button {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+      font-size: 16px;
+    }
+    button:hover { background: #c0392b; }
+    .success-btn { background: #27ae60; }
+    .success-btn:hover { background: #229954; }
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      border: 1px solid #3a3a3a;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    #result { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🚨 Khôi Phục Khẩn Cấp Playlist</h1>
+  
+  <div class="section">
+    <h2>Bước 1: Kiểm Tra Dữ Liệu</h2>
+    <button onclick="checkData()">🔍 Kiểm Tra localStorage</button>
+    <div id="check-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Bước 2: Khôi Phục Tự Động</h2>
+    <button class="success-btn" onclick="autoRecover()">🔧 Khôi Phục Tự Động</button>
+    <div id="recover-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Bước 3: Xem Dữ Liệu Raw</h2>
+    <button onclick="showRaw()">📄 Xem Raw Data</button>
+    <div id="raw-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Bước 4: Import Backup (Nếu Có)</h2>
+    <input type="file" id="backup-file" accept=".json" style="margin-bottom:10px">
+    <button onclick="importBackup()">📥 Import Backup</button>
+    <div id="import-result"></div>
+  </div>
+
+  <script>
+    function checkData() {
+      const resultDiv = document.getElementById('check-result');
+      
+      try {
+        const data = localStorage.getItem('dictationPlaylist');
+        
+        if (!data || data === '[]' || data === 'null') {
+          resultDiv.innerHTML = '<div class="error">❌ KHÔNG CÓ DỮ LIỆU trong localStorage!<br><br>Dữ liệu đã bị xóa hoặc chưa từng có.</div>';
+          return;
+        }
+
+        const playlist = JSON.parse(data);
+        
+        if (!Array.isArray(playlist)) {
+          resultDiv.innerHTML = '<div class="error">❌ Dữ liệu không hợp lệ (không phải array)</div>';
+          return;
+        }
+
+        if (playlist.length === 0) {
+          resultDiv.innerHTML = '<div class="error">❌ Playlist rỗng (length = 0)</div>';
+          return;
+        }
+
+        // Analyze data
+        const total = playlist.length;
+        const withVideoId = playlist.filter(v => v.videoId && v.videoId !== 'playlist_marker').length;
+        const withoutVideoId = playlist.filter(v => !v.videoId || v.videoId === 'playlist_marker').length;
+        const withPlaylist = playlist.filter(v => v.playlist).length;
+        const markers = playlist.filter(v => v.isPlaylistMarker).length;
+
+        resultDiv.innerHTML = `
+          <div class="success">
+            ✅ TÌM THẤY DỮ LIỆU!<br><br>
+            📊 Tổng: ${total} items<br>
+            ✅ Có VideoID: ${withVideoId}<br>
+            ⚠️ Không có VideoID: ${withoutVideoId}<br>
+            📁 Có Playlist: ${withPlaylist}<br>
+            🏷️ Playlist Markers: ${markers}
+          </div>
+        `;
+
+        // Show sample
+        if (playlist.length > 0) {
+          resultDiv.innerHTML += `
+            <div class="warning" style="margin-top:10px">
+              <strong>Mẫu video đầu tiên:</strong><br>
+              ID: ${playlist[0].id}<br>
+              VideoID: ${playlist[0].videoId || 'N/A'}<br>
+              Title: ${playlist[0].title || 'N/A'}<br>
+              Playlist: ${playlist[0].playlist || 'Chưa có'}<br>
+              URL: ${playlist[0].url || 'N/A'}
+            </div>
+          `;
+        }
+
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Lỗi: ${error.message}</div>`;
+        console.error(error);
+      }
+    }
+
+    function autoRecover() {
+      const resultDiv = document.getElementById('recover-result');
+      
+      try {
+        const data = localStorage.getItem('dictationPlaylist');
+        
+        if (!data || data === '[]' || data === 'null') {
+          resultDiv.innerHTML = '<div class="error">❌ Không có dữ liệu để khôi phục!</div>';
+          return;
+        }
+
+        let playlist = JSON.parse(data);
+        
+        if (!Array.isArray(playlist)) {
+          resultDiv.innerHTML = '<div class="error">❌ Dữ liệu không hợp lệ!</div>';
+          return;
+        }
+
+        let fixed = 0;
+        let removed = 0;
+
+        // Fix each item
+        const validPlaylist = [];
+        
+        playlist.forEach(item => {
+          // Skip completely invalid items
+          if (!item || typeof item !== 'object') {
+            removed++;
+            return;
+          }
+
+          // Ensure ID
+          if (!item.id) {
+            item.id = Date.now() + Math.random();
+            fixed++;
+          }
+
+          // Keep playlist markers
+          if (item.isPlaylistMarker) {
+            validPlaylist.push(item);
+            return;
+          }
+
+          // Try to extract videoId from URL
+          if (!item.videoId && item.url) {
+            const match = item.url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+            if (match) {
+              item.videoId = match[1];
+              fixed++;
+            }
+          }
+
+          // Ensure title
+          if (!item.title) {
+            item.title = `Video ${item.id}`;
+            fixed++;
+          }
+
+          // Ensure numeric fields
+          if (typeof item.totalCount !== 'number') {
+            item.totalCount = 0;
+            fixed++;
+          }
+          if (typeof item.completedCount !== 'number') {
+            item.completedCount = 0;
+            fixed++;
+          }
+
+          // Add to valid list
+          validPlaylist.push(item);
+        });
+
+        // Save back
+        localStorage.setItem('dictationPlaylist', JSON.stringify(validPlaylist));
+
+        resultDiv.innerHTML = `
+          <div class="success">
+            ✅ KHÔI PHỤC THÀNH CÔNG!<br><br>
+            📊 Tổng: ${validPlaylist.length} videos<br>
+            🔧 Đã sửa: ${fixed} thuộc tính<br>
+            🗑️ Đã loại bỏ: ${removed} items không hợp lệ<br><br>
+            <strong>👉 Hãy quay lại app và refresh trang (F5)!</strong>
+          </div>
+        `;
+
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Lỗi: ${error.message}</div>`;
+        console.error(error);
+      }
+    }
+
+    function showRaw() {
+      const resultDiv = document.getElementById('raw-result');
+      
+      try {
+        const data = localStorage.getItem('dictationPlaylist');
+        
+        if (!data) {
+          resultDiv.innerHTML = '<div class="error">❌ Không có dữ liệu!</div>';
+          return;
+        }
+
+        const playlist = JSON.parse(data);
+        resultDiv.innerHTML = `
+          <div class="success">Tìm thấy ${playlist.length} items</div>
+          <pre>${JSON.stringify(playlist, null, 2)}</pre>
+        `;
+
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Lỗi: ${error.message}</div>`;
+      }
+    }
+
+    function importBackup() {
+      const resultDiv = document.getElementById('import-result');
+      const fileInput = document.getElementById('backup-file');
+      
+      if (!fileInput.files || fileInput.files.length === 0) {
+        resultDiv.innerHTML = '<div class="error">❌ Vui lòng chọn file backup!</div>';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          
+          if (!Array.isArray(data)) {
+            resultDiv.innerHTML = '<div class="error">❌ File backup không hợp lệ!</div>';
+            return;
+          }
+
+          // Save to localStorage
+          localStorage.setItem('dictationPlaylist', JSON.stringify(data));
+
+          resultDiv.innerHTML = `
+            <div class="success">
+              ✅ IMPORT THÀNH CÔNG!<br><br>
+              Đã import ${data.length} videos<br><br>
+              <strong>👉 Hãy quay lại app và refresh trang (F5)!</strong>
+            </div>
+          `;
+
+        } catch (error) {
+          resultDiv.innerHTML = `<div class="error">❌ Lỗi: ${error.message}</div>`;
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    // Auto check on load
+    window.onload = function() {
+      checkData();
+    };
+  </script>
+</body>
+</html>
