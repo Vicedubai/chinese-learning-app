@@ -479,6 +479,13 @@ Bài 15: Trang 36-37..."
               <h3 style="margin-bottom:6px">Chọn Chương</h3>
               <p class="text-sm text-muted">Chọn chương cụ thể để luyện tập</p>
             </div>
+            <div class="card"
+              style="cursor:pointer;text-align:center;background:linear-gradient(135deg,rgba(240,180,41,0.2),rgba(240,180,41,0.05));border:1px solid rgba(240,180,41,0.3)"
+              onclick="openSelectBooksModal()">
+              <div style="font-size:40px;margin-bottom:12px">📚</div>
+              <h3 style="margin-bottom:6px">Chọn Giáo Trình</h3>
+              <p class="text-sm text-muted">Chọn theo chủ đề (giáo trình) để luyện tập</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1453,7 +1460,8 @@ Ví dụ định dạng:
 
 3. Transcript phải chính xác, đầy đủ, không bỏ sót
 4. Bản dịch phải tự nhiên, phù hợp ngữ cảnh, thể hiện đúng ý nghĩa và cảm xúc
-5. Chỉ trả về transcript, không cần giải thích thêm`;
+5  Chỉ nhận giản thể không nhận phồn thể, với từ vựng thêm hán việt bên cạnh
+6. Chỉ trả về transcript, không cần giải thích thêm`;
       
       document.getElementById('gemini-prompt-display').value = prompt;
       
@@ -2366,6 +2374,24 @@ Ví dụ định dạng:
       <button class="btn btn-primary" style="flex:1" onclick="startComprehensiveExercise()">🎯 Bắt Đầu Luyện
         Tập</button>
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-select-chapters')">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- SELECT BOOKS MODAL -->
+<div class="modal-overlay" id="modal-select-books" style="display:none">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span class="modal-title">📚 Chọn Giáo Trình Để Luyện Tập</span>
+      <button class="modal-close" onclick="closeModal('modal-select-books')">✕</button>
+    </div>
+    <div style="padding:20px;max-height:420px;overflow-y:auto">
+      <div class="text-sm text-muted mb-12">Tick giáo trình → hệ thống sẽ lấy tất cả chương trong giáo trình đó.</div>
+      <div id="books-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+    <div style="padding:16px;border-top:1px solid var(--border);display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="startComprehensiveExerciseFromBooks()">🎯 Bắt Đầu Luyện Tập</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-select-books')">Hủy</button>
     </div>
   </div>
 </div>

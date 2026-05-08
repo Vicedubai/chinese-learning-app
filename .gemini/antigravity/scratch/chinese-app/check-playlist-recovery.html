@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm Tra & Khôi Phục Playlist</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e0e0e0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+    }
+    h1 { color: #f0b429; margin-bottom: 10px; font-size: 28px; }
+    h2 { color: #3498db; margin: 30px 0 15px; font-size: 20px; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .status.info { background: rgba(52,152,219,0.2); border-left: 4px solid #3498db; }
+    .status.success { background: rgba(46,204,113,0.2); border-left: 4px solid #2ecc71; }
+    .status.error { background: rgba(231,76,60,0.2); border-left: 4px solid #e74c3c; }
+    .status.warning { background: rgba(241,196,15,0.2); border-left: 4px solid #f1c40f; }
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 5px;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.success { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+    .btn.danger { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .btn.warning { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+    pre {
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.5;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .data-item {
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border-left: 3px solid #3498db;
+    }
+    .data-item strong { color: #f0b429; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Kiểm Tra & Khôi Phục Playlist</h1>
+    <p style="color: #95a5a6; margin-bottom: 30px;">Tool này giúp bạn kiểm tra và khôi phục dữ liệu playlist từ Supabase và localStorage</p>
+
+    <div class="grid">
+      <button class="btn" onclick="checkLocalStorage()">📱 Kiểm tra localStorage</button>
+      <button class="btn" onclick="checkSupabase()">☁️ Kiểm tra Supabase</button>
+      <button class="btn success" onclick="loadFromSupabase()">⬇️ Tải từ Supabase</button>
+      <button class="btn warning" onclick="fixAndRender()">🔧 Sửa & Hiển thị</button>
+      <button class="btn danger" onclick="clearLocalData()">🗑️ Xóa localStorage</button>
+    </div>
+
+    <h2>📊 Kết quả kiểm tra</h2>
+    <div id="results"></div>
+
+    <h2>📝 Chi tiết dữ liệu</h2>
+    <div id="details"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://iqxpqvqxqxqxqxqx.supabase.co'; // Thay bằng URL thực của bạn
+    const SUPABASE_KEY = 'your-anon-key'; // Thay bằng key thực của bạn
+    
+    let supabaseClient = null;
+    let currentUser = null;
+
+    // Initialize Supabase
+    function initSupabase() {
+      const url = prompt('Nhập Supabase URL:', localStorage.getItem('supabase-url') || '');
+      const key = prompt('Nhập Supabase Anon Key:', localStorage.getItem('supabase-key') || '');
+      
+      if (url && key) {
+        localStorage.setItem('supabase-url', url);
+        localStorage.setItem('supabase-key', key);
+        supabaseClient = supabase.createClient(url, key);
+        showStatus('✅ Đã kết nối Supabase', 'success');
+        return true;
+      }
+      return false;
+    }
+
+    function showStatus(message, type = 'info') {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.innerHTML = message;
+      results.appendChild(div);
+      results.scrollTop = results.scrollHeight;
+    }
+
+    function showDetails(title, data) {
+      const details = document.getElementById('details');
+      const div = document.createElement('div');
+      div.innerHTML = `<h3 style="color: #3498db; margin: 15px 0 10px;">${title}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      details.appendChild(div);
+    }
+
+    async function checkLocalStorage() {
+      showStatus('🔍 Đang kiểm tra localStorage...', 'info');
+      
+      try {
+        const dictationPlaylist = localStorage.getItem('dictationPlaylist');
+        
+        if (!dictationPlaylist) {
+          showStatus('⚠️ Không tìm thấy dictationPlaylist trong localStorage', 'warning');
+          return;
+        }
+
+        const playlist = JSON.parse(dictationPlaylist);
+        showStatus(`✅ Tìm thấy ${playlist.length} items trong localStorage`, 'success');
+        
+        // Analyze data
+        const validItems = playlist.filter(item => item && item.id && item.videoId);
+        const invalidItems = playlist.length - validItems.length;
+        
+        if (invalidItems > 0) {
+          showStatus(`⚠️ Phát hiện ${invalidItems} items không hợp lệ`, 'warning');
+        }
+
+        // Show details
+        showDetails('📱 localStorage Data', {
+          total: playlist.length,
+          valid: validItems.length,
+          invalid: invalidItems,
+          items: playlist.map(item => ({
+            id: item?.id,
+            videoId: item?.videoId,
+            title: item?.title,
+            playlist: item?.playlist,
+            hasTranscript: !!item?.transcript
+          }))
+        });
+
+      } catch (error) {
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    async function checkSupabase() {
+      if (!supabaseClient && !initSupabase()) return;
+      
+      showStatus('🔍 Đang kiểm tra Supabase...', 'info');
+      
+      try {
+        // Get current user
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+        
+        if (authError || !user) {
+          showStatus('⚠️ Chưa đăng nhập Supabase. Vui lòng đăng nhập trước.', 'warning');
+          
+          // Try to login
+          const email = prompt('Email:');
+          const password = prompt('Password:');
+          
+          if (email && password) {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+              showStatus(`❌ Lỗi đăng nhập: ${error.message}`, 'error');
+              return;
+            }
+            currentUser = data.user;
+            showStatus('✅ Đăng nhập thành công', 'success');
+          } else {
+            return;
+          }
+        } else {
+          currentUser = user;
+          showStatus(`✅ Đã đăng nhập: ${user.email}`, 'success');
+        }
+
+        // Get data from Supabase
+        const { data, error } = await supabaseClient
+          .from('user_settings')
+          .select('settings')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (error) {
+          showStatus(`❌ Lỗi truy vấn: ${error.message}`, 'error');
+          return;
+        }
+
+        if (!data || !data.settings) {
+          showStatus('⚠️ Không tìm thấy dữ liệu trong Supabase', 'warning');
+          return;
+        }
+
+        const playlist = data.settings.dictationPlaylist || [];
+        showStatus(`✅ Tìm thấy ${playlist.length} items trong Supabase`, 'success');
+
+        // Show details
+        showDetails('☁️ Supabase Data', {
+          total: playlist.length,
+          items: playlist.map(item => ({
+            id: item?.id,
+            videoId: item?.videoId,
+            title: item?.title,
+            playlist: item?.playlist,
+            hasTranscript: !!item?.transcript
+          }))
+        });
+
+      } catch (error) {
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    async function loadFromSupabase() {
+      if (!supabaseClient && !initSupabase()) return;
+      if (!currentUser) {
+        await checkSupabase();
+        if (!currentUser) return;
+      }
+
+      showStatus('⬇️ Đang tải dữ liệu từ Supabase...', 'info');
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_settings')
+          .select('settings')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data && data.settings) {
+          // Save to localStorage
+          if (data.settings.dictationPlaylist) {
+            localStorage.setItem('dictationPlaylist', JSON.stringify(data.settings.dictationPlaylist));
+            showStatus(`✅ Đã lưu ${data.settings.dictationPlaylist.length} items vào localStorage`, 'success');
+          }
+          
+          if (data.settings.books) {
+            localStorage.setItem('books', JSON.stringify(data.settings.books));
+          }
+          
+          if (data.settings.chapters) {
+            localStorage.setItem('chapters', JSON.stringify(data.settings.chapters));
+          }
+          
+          if (data.settings.cards) {
+            localStorage.setItem('cards', JSON.stringify(data.settings.cards));
+          }
+          
+          if (data.settings.progress) {
+            localStorage.setItem('progress', JSON.stringify(data.settings.progress));
+          }
+
+          showStatus('✅ Đã tải toàn bộ dữ liệu từ Supabase!', 'success');
+          showStatus('🔄 Vui lòng tải lại trang chính để xem kết quả', 'info');
+        }
+
+      } catch (error) {
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    function fixAndRender() {
+      showStatus('🔧 Đang sửa và hiển thị dữ liệu...', 'info');
+
+      try {
+        const playlistStr = localStorage.getItem('dictationPlaylist');
+        if (!playlistStr) {
+          showStatus('⚠️ Không có dữ liệu để sửa', 'warning');
+          return;
+        }
+
+        let playlist = JSON.parse(playlistStr);
+        const originalCount = playlist.length;
+
+        // Fix data
+        playlist = playlist.filter(item => {
+          if (!item || typeof item !== 'object') return false;
+          if (!item.id || !item.videoId) return false;
+          
+          // Fix missing properties
+          if (!item.title) item.title = `Video ${item.id}`;
+          if (typeof item.totalCount !== 'number') item.totalCount = 0;
+          if (typeof item.completedCount !== 'number') item.completedCount = 0;
+          
+          return true;
+        });
+
+        // Save fixed data
+        localStorage.setItem('dictationPlaylist', JSON.stringify(playlist));
+        
+        showStatus(`✅ Đã sửa dữ liệu: ${playlist.length}/${originalCount} items hợp lệ`, 'success');
+        
+        if (playlist.length !== originalCount) {
+          showStatus(`⚠️ Đã loại bỏ ${originalCount - playlist.length} items không hợp lệ`, 'warning');
+        }
+
+        // Show fixed data
+        showDetails('🔧 Dữ liệu đã sửa', playlist);
+
+        showStatus('🔄 Vui lòng tải lại trang chính để xem kết quả', 'info');
+
+      } catch (error) {
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    function clearLocalData() {
+      if (!confirm('⚠️ Xóa toàn bộ dữ liệu localStorage? Thao tác này KHÔNG THỂ HOÀN TÁC!')) return;
+
+      try {
+        const keys = ['dictationPlaylist', 'books', 'chapters', 'cards', 'progress', 'session'];
+        keys.forEach(key => localStorage.removeItem(key));
+        
+        showStatus('✅ Đã xóa toàn bộ dữ liệu localStorage', 'success');
+        showStatus('💡 Bạn có thể tải lại từ Supabase bằng nút "Tải từ Supabase"', 'info');
+
+      } catch (error) {
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
+      }
+    }
+
+    // Auto check on load
+    window.addEventListener('load', () => {
+      showStatus('👋 Chào mừng! Hãy chọn một thao tác để bắt đầu.', 'info');
+      
+      // Try to init Supabase from saved credentials
+      const url = localStorage.getItem('supabase-url');
+      const key = localStorage.getItem('supabase-key');
+      if (url && key) {
+        supabaseClient = supabase.createClient(url, key);
+        showStatus('✅ Đã tự động kết nối Supabase từ credentials đã lưu', 'success');
+      }
+    });
+  </script>
+</body>
+</html>

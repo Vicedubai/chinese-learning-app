@@ -720,6 +720,7 @@ function typeLabel(type) {
 // ===== COMPREHENSIVE EXERCISES (NO API NEEDED) =====
 
 let selectedChaptersForComprehensive = [];
+let selectedBooksForComprehensive = [];
 
 function openComprehensiveExerciseModal() {
   if (State.chapters.length === 0) {
@@ -730,6 +731,55 @@ function openComprehensiveExerciseModal() {
   // Start with all chapters selected
   selectedChaptersForComprehensive = State.chapters.map(c => c.id);
   openModal('modal-comprehensive-settings');
+}
+
+function openSelectBooksModal() {
+  if (!State.books || State.books.length === 0) {
+    toast('Không có giáo trình nào để chọn', 'error');
+    return;
+  }
+  if (!State.chapters || State.chapters.length === 0) {
+    toast('Không có chương nào để tạo bài tập', 'error');
+    return;
+  }
+
+  // Render books list
+  const list = document.getElementById('books-list');
+  if (!list) {
+    toast('Không tìm thấy UI chọn giáo trình', 'error');
+    return;
+  }
+
+  // Default: select all books
+  selectedBooksForComprehensive = State.books.map(b => b.id);
+
+  list.innerHTML = State.books.map(book => {
+    const bookChapters = State.chapters.filter(ch => ch.bookId === book.id);
+    const bookCards = State.cards.filter(c => bookChapters.find(ch => ch.id === c.chapterId));
+    return `
+      <label style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-2);border-radius:6px;cursor:pointer;border:1px solid var(--border)">
+        <input type="checkbox" class="book-checkbox" value="${book.id}" checked style="width:18px;height:18px;cursor:pointer">
+        <div style="flex:1">
+          <div style="font-weight:600">${book.title}</div>
+          <div style="font-size:12px;color:var(--text-3)">${bookChapters.length} chương · ${bookCards.length} từ vựng</div>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  // Add change listeners
+  document.querySelectorAll('.book-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.value;
+      if (e.target.checked) {
+        if (!selectedBooksForComprehensive.includes(id)) selectedBooksForComprehensive.push(id);
+      } else {
+        selectedBooksForComprehensive = selectedBooksForComprehensive.filter(x => x !== id);
+      }
+    });
+  });
+
+  openModal('modal-select-books');
 }
 
 function openSelectChaptersModal() {
@@ -775,6 +825,27 @@ function startComprehensiveExercise() {
   }
   
   closeModal('modal-select-chapters');
+  openModal('modal-comprehensive-settings');
+}
+
+function startComprehensiveExerciseFromBooks() {
+  if (!selectedBooksForComprehensive || selectedBooksForComprehensive.length === 0) {
+    toast('Vui lòng chọn ít nhất một giáo trình', 'error');
+    return;
+  }
+
+  // Map books → chapters
+  const chapterIds = State.chapters
+    .filter(ch => selectedBooksForComprehensive.includes(ch.bookId))
+    .map(ch => ch.id);
+
+  if (chapterIds.length === 0) {
+    toast('Không có chương nào trong các giáo trình đã chọn', 'error');
+    return;
+  }
+
+  selectedChaptersForComprehensive = chapterIds;
+  closeModal('modal-select-books');
   openModal('modal-comprehensive-settings');
 }
 
